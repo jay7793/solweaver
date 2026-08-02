@@ -1,0 +1,4 @@
+interface:
+  display_name: "Solweaver"
+  short_description: "Sol leads Terra and Luna workers"
+  default_prompt: "Use $solweaver to plan, delegate, integrate, and verify this software-development goal."

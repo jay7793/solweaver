@@ -1,0 +1,7 @@
+# Merge these values into ~/.codex/config.toml.
+model = "gpt-5.6-sol"
+model_reasoning_effort = "max"
+
+[agents]
+max_threads = 6
+max_depth = 1

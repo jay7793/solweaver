@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title description">
+  <title id="title">Solweaver component model baselines on DeepSWE v1.1</title>
+  <desc id="description">A cost-versus-score plot in a clean benchmark aesthetic. Individual DeepSWE pass rates are 73 percent for GPT-5.6 Sol max, 70 percent for GPT-5.6 Terra max, and 67 percent for GPT-5.6 Luna max. These are not combined Solweaver team scores.</desc>
+
+  <style>
+    .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .mono { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+    .muted { fill: #717171; }
+    .grid { stroke: #dedede; stroke-width: 1; }
+    .axis { fill: #777; font-size: 14px; }
+    .model { fill: #178d4c; font-size: 20px; font-weight: 700; }
+    .effort { fill: #54aa78; font-size: 12px; letter-spacing: 1.4px; }
+    .metric { fill: #555; font-size: 13px; }
+  </style>
+
+  <rect width="1200" height="720" fill="#ffffff"/>
+
+  <!-- Solweaver header -->
+  <rect x="46" y="20" width="38" height="38" rx="8" fill="#050505"/>
+  <path d="M56 46 C61 46 62 32 69 32 M61 50 C69 50 69 39 76 38" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+  <line x1="101" y1="18" x2="101" y2="60" stroke="#cfcfcf" stroke-width="2"/>
+  <text x="118" y="48" class="sans" fill="#090909" font-size="27" font-weight="750">Solweaver</text>
+  <text x="1095" y="45" text-anchor="end" class="sans muted" font-size="15">component benchmark</text>
+  <line x1="0" y1="78" x2="1200" y2="78" stroke="#dedede"/>
+
+  <!-- Page title and benchmark controls -->
+  <text x="80" y="126" class="sans" fill="#080808" font-size="31" font-weight="750">Component model baselines</text>
+  <rect x="80" y="148" width="62" height="36" fill="#080808"/>
+  <text x="111" y="171" text-anchor="middle" class="sans" fill="#fff" font-size="14">v1.1</text>
+  <rect x="150" y="148" width="74" height="36" fill="#080808"/>
+  <text x="187" y="171" text-anchor="middle" class="sans" fill="#fff" font-size="14">Cost</text>
+  <rect x="224" y="148" width="128" height="36" fill="#fff" stroke="#d9d9d9"/>
+  <text x="288" y="171" text-anchor="middle" class="sans muted" font-size="14">Output tokens</text>
+  <rect x="352" y="148" width="106" height="36" fill="#fff" stroke="#d9d9d9"/>
+  <text x="405" y="171" text-anchor="middle" class="sans muted" font-size="14">Agent steps</text>
+  <text x="1120" y="171" text-anchor="end" class="sans" fill="#1b1b1b" font-size="15">
+    <tspan font-weight="700">113 tasks</tspan>
+    <tspan fill="#777"> · updated July 25, 2026</tspan>
+  </text>
+
+  <!-- Plot -->
+  <rect x="80" y="206" width="1040" height="382" fill="#fff" stroke="#d9d9d9"/>
+  <text x="130" y="250" class="sans" fill="#111" font-size="19" font-weight="700">DeepSWE score</text>
+  <text x="1080" y="250" text-anchor="end" class="sans" fill="#777" font-size="14" font-style="italic">most efficient ↗</text>
+
+  <line x1="160" y1="284" x2="1080" y2="284" class="grid"/>
+  <line x1="160" y1="343" x2="1080" y2="343" class="grid"/>
+  <line x1="160" y1="402" x2="1080" y2="402" class="grid"/>
+  <line x1="160" y1="461" x2="1080" y2="461" class="grid"/>
+  <line x1="160" y1="520" x2="1080" y2="520" class="grid"/>
+
+  <line x1="313" y1="284" x2="313" y2="520" class="grid"/>
+  <line x1="697" y1="284" x2="697" y2="520" class="grid"/>
+  <line x1="1080" y1="284" x2="1080" y2="520" class="grid"/>
+
+  <text x="145" y="289" text-anchor="end" class="sans axis">80%</text>
+  <text x="145" y="348" text-anchor="end" class="sans axis">60%</text>
+  <text x="145" y="407" text-anchor="end" class="sans axis">40%</text>
+  <text x="145" y="466" text-anchor="end" class="sans axis">20%</text>
+  <text x="145" y="525" text-anchor="end" class="sans axis">0%</text>
+
+  <text x="313" y="548" text-anchor="middle" class="sans axis">$10</text>
+  <text x="697" y="548" text-anchor="middle" class="sans axis">$5.00</text>
+  <text x="1080" y="548" text-anchor="middle" class="sans axis">$0</text>
+  <text x="620" y="574" text-anchor="middle" class="sans" fill="#222" font-size="16">Avg cost per task</text>
+
+  <!-- Sol: $8.39, 73% ±3 -->
+  <line x1="437" y1="296" x2="437" y2="314" stroke="#178d4c" stroke-width="2"/>
+  <line x1="430" y1="296" x2="444" y2="296" stroke="#178d4c" stroke-width="2"/>
+  <line x1="430" y1="314" x2="444" y2="314" stroke="#178d4c" stroke-width="2"/>
+  <circle cx="437" cy="305" r="7" fill="#178d4c"/>
+  <text x="455" y="295" class="sans model">gpt-5.6-sol</text>
+  <text x="455" y="314" class="mono effort">MAX · ORCHESTRATOR</text>
+  <text x="455" y="333" class="sans metric">73% ±3 · $8.39 · 60k out</text>
+
+  <!-- Terra: $3.96, 70% ±3 -->
+  <line x1="776" y1="305" x2="776" y2="323" stroke="#2fa962" stroke-width="2"/>
+  <line x1="769" y1="305" x2="783" y2="305" stroke="#2fa962" stroke-width="2"/>
+  <line x1="769" y1="323" x2="783" y2="323" stroke="#2fa962" stroke-width="2"/>
+  <circle cx="776" cy="314" r="7" fill="#2fa962"/>
+  <text x="794" y="303" class="sans model">gpt-5.6-terra</text>
+  <text x="794" y="322" class="mono effort">MAX · DEFAULT WORKER</text>
+  <text x="794" y="341" class="sans metric">70% ±3 · $3.96 · 72k out</text>
+
+  <!-- Luna: $0.61, 67% ±4 -->
+  <line x1="1033" y1="310" x2="1033" y2="334" stroke="#5acb8b" stroke-width="2"/>
+  <line x1="1026" y1="310" x2="1040" y2="310" stroke="#5acb8b" stroke-width="2"/>
+  <line x1="1026" y1="334" x2="1040" y2="334" stroke="#5acb8b" stroke-width="2"/>
+  <circle cx="1033" cy="322" r="7" fill="#5acb8b"/>
+  <line x1="1026" y1="329" x2="951" y2="372" stroke="#a9ddbf" stroke-width="1.5"/>
+  <text x="944" y="371" text-anchor="end" class="sans model">gpt-5.6-luna</text>
+  <text x="944" y="390" text-anchor="end" class="mono effort">MAX · BOUNDED WORKER</text>
+  <text x="944" y="409" text-anchor="end" class="sans metric">67% ±4 · $0.61 · 73k out</text>
+
+  <!-- Methodology note -->
+  <rect x="80" y="610" width="1040" height="58" fill="#fafafa" stroke="#dedede"/>
+  <circle cx="108" cy="639" r="14" fill="#111"/>
+  <text x="108" y="644" text-anchor="middle" class="sans" fill="#fff" font-size="14" font-weight="700">i</text>
+  <text x="134" y="634" class="sans" fill="#191919" font-size="14" font-weight="700">Individual-model results under the same mini-swe-agent harness</text>
+  <text x="134" y="655" class="sans muted" font-size="13">Component baselines only — they do not measure or predict a combined Solweaver team score.</text>
+
+  <text x="80" y="701" class="sans muted" font-size="12">Source: deepswe.datacurve.ai · DeepSWE v1.1</text>
+  <text x="1120" y="701" text-anchor="end" class="sans muted" font-size="12">Pass rate · average cost per trial · reasoning effort max</text>
+</svg>

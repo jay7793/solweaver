@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title description">
+  <title id="title">Solweaver mark</title>
+  <desc id="description">Two interwoven paths forming an abstract letter S.</desc>
+  <rect x="10" y="10" width="108" height="108" rx="26" fill="#090909" stroke="#3f3f3f" stroke-width="2"/>
+  <path d="M35 76 C50 76 48 42 69 42" fill="none" stroke="#ffffff" stroke-width="11" stroke-linecap="round"/>
+  <path d="M59 87 C80 87 78 53 94 52" fill="none" stroke="#52c884" stroke-width="11" stroke-linecap="round"/>
+</svg>

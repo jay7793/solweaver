@@ -13,6 +13,7 @@
   <p>
     <a href="#why-solweaver">Why Solweaver</a> ·
     <a href="#quick-start">Quick start</a> ·
+    <a href="#usage">Usage</a> ·
     <a href="#how-it-works">How it works</a> ·
     <a href="#benchmark-context">Benchmarks</a> ·
     <a href="#safety-model">Safety</a>
@@ -121,6 +122,96 @@ Goal: implement the feature and verify it end to end.
 With the example global policy installed, software-development prompts starting
 with `Goal:` or `/goal`, plus requests such as `use software team`, can load
 Solweaver automatically.
+
+## Usage
+
+You usually only need to describe the outcome. Sol keeps ownership of the plan,
+chooses the smallest useful team, reviews the actual changes, and reports the
+evidence.
+
+### Standard mode
+
+Use standard mode for ordinary feature work:
+
+```text
+$solweaver
+
+Goal: add profile editing with validation and regression tests.
+```
+
+Sol decides whether delegation adds value, routes coupled implementation to
+Terra and narrow work to Luna, then inspects and verifies the integrated result.
+
+### Strict mode
+
+Request strict mode explicitly when you want a fresh read-only Sol review:
+
+```text
+$solweaver
+
+Use strict mode.
+
+Goal: implement payment webhook verification and replay protection.
+```
+
+Solweaver also selects strict mode automatically for auth, authorization,
+secrets, tenant isolation, money, data integrity, migrations, destructive
+behavior, concurrency, public APIs, production-critical paths, and wide
+architectural refactors. Strict completion requires a reviewer verdict of
+`ship`; `fix-first` returns findings to the responsible worker, while `rethink`
+returns the architecture to Sol.
+
+### Steer worker selection
+
+You do not need to select a worker manually, but you can when the boundary is
+clear.
+
+Use Terra for coupled or judgment-heavy implementation:
+
+```text
+$solweaver
+
+Use terra_worker for the implementation.
+
+Goal: refactor the authentication service without changing its public API.
+```
+
+Use Luna for narrow, repetitive, or low-coupling work:
+
+```text
+$solweaver
+
+Delegate the isolated validation fixtures to luna_worker.
+
+Goal: add regression coverage for the request validation helpers.
+```
+
+### Run independent work in parallel
+
+State the ownership boundaries when you want parallel workers:
+
+```text
+$solweaver
+
+Use the software team. Let Terra own the API implementation and Luna own only
+the isolated fixtures. Run them in parallel only if their files do not overlap.
+
+Goal: add CSV export with API tests and fixtures.
+```
+
+Parallelism is optional. Shared files, dependency chains, and unresolved design
+decisions remain serial.
+
+### Expected result
+
+Sol should finish with:
+
+- the usable outcome and changed-file scope;
+- verification commands actually run and their concrete results;
+- the assurance mode and strict-review verdict when applicable;
+- remaining gaps, risks, or behavior that was not proved; and
+- external actions such as commit, push, pull request, merge, or deployment
+  still waiting for explicit authorization.
 
 ## How it works
 

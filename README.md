@@ -1,10 +1,11 @@
 <div align="center">
   <img src="./assets/solweaver-mark.svg" width="92" height="92" alt="Solweaver logo">
   <h1>Solweaver</h1>
-  <p><strong>One orchestrator. Two purpose-built workers. Evidence before done.</strong></p>
-  <p>A practical multi-agent software team for Codex, led by GPT-5.6 Sol with GPT-5.6 Terra and GPT-5.6 Luna as bounded implementation workers.</p>
+  <p><strong>One orchestrator. Two purpose-built workers. Adaptive assurance.</strong></p>
+  <p>A practical Codex software team led by GPT-5.6 Sol, with GPT-5.6 Terra and Luna as bounded workers and a fresh Sol reviewer for strict-risk changes.</p>
   <p>
     <a href="https://github.com/jay7793/solweaver/actions/workflows/validate.yml"><img src="https://img.shields.io/github/actions/workflow/status/jay7793/solweaver/validate.yml?branch=main&amp;style=flat-square&amp;label=validate" alt="Validation status"></a>
+    <a href="https://github.com/jay7793/solweaver/releases/latest"><img src="https://img.shields.io/github/v/release/jay7793/solweaver?style=flat-square&amp;label=release" alt="Latest release"></a>
     <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-2f8f55?style=flat-square" alt="MIT License"></a>
     <img src="https://img.shields.io/badge/models-Sol%20%2B%20Terra%20%2B%20Luna-111111?style=flat-square" alt="Sol, Terra, and Luna">
     <img src="https://img.shields.io/badge/reasoning-max-111111?style=flat-square" alt="Maximum reasoning effort">
@@ -39,6 +40,11 @@ the model that fits it best.
   explicit and their write scopes are disjoint.
 - **Verification built in:** worker summaries are not treated as proof; Sol
   reviews the changes and runs appropriate checks.
+- **Adaptive assurance:** ordinary work stays lightweight; auth, money,
+  migrations, public APIs, production paths, and wide refactors receive a
+  fresh read-only Sol review.
+- **Runtime honesty:** configured model routing is kept distinct from model and
+  effort actually exposed by runtime metadata.
 - **No surprise publishing:** deployment, production mutation, commits, pushes,
   and pull requests still require user authorization.
 
@@ -85,7 +91,7 @@ cd solweaver
 python3 scripts/install.py
 ```
 
-The installer copies the skill and worker definitions into `$CODEX_HOME`, or
+The installer copies the skill and agent definitions into `$CODEX_HOME`, or
 `~/.codex` when `CODEX_HOME` is unset. It refuses to overwrite existing files.
 
 ### 2. Configure
@@ -94,6 +100,10 @@ Merge the relevant settings instead of replacing your existing configuration:
 
 - [`examples/config.toml`](./examples/config.toml) → `~/.codex/config.toml`
 - [`examples/AGENTS.md`](./examples/AGENTS.md) → `~/.codex/AGENTS.md`
+
+The example caps spawned-agent concurrency at `2`. The primary Sol thread is
+not included in that number, so the maximum visible total is Sol plus two
+spawned agents.
 
 Restart Codex or open a new task so the skill, agents, model, and reasoning
 settings are reloaded.
@@ -121,7 +131,12 @@ flowchart LR
     S -->|"Narrow or high-throughput"| L["Luna max<br/>Bounded worker"]
     T --> I["Sol max<br/>Integrate and verify"]
     L --> I
-    I --> R["Evidence-backed result"]
+    I --> A{"Strict risk?"}
+    A -->|"No"| R["Evidence-backed result"]
+    A -->|"Yes"| V["Fresh Sol max<br/>Read-only review"]
+    V -->|"ship"| R
+    V -->|"fix-first"| S
+    V -->|"rethink"| S
 ```
 
 | Role | Runtime | Best fit |
@@ -129,11 +144,23 @@ flowchart LR
 | Orchestrator | `gpt-5.6-sol` / `max` | Planning, decomposition, ownership, integration, review, and delivery |
 | Default worker | `gpt-5.6-terra` / `max` | Coupled, ambiguous, multi-file, architecture-sensitive, backend, frontend, database, integration, debugging, and refactoring work |
 | Bounded worker | `gpt-5.6-luna` / `max` | Narrow, mechanical, repetitive, documentation-adjacent, high-throughput, or independent file clusters |
+| Strict reviewer | `gpt-5.6-sol` / `max`, read-only | Fresh-context review for high-risk or wide changes; returns `ship`, `fix-first`, or `rethink` |
 
 Sol owns orchestration throughout. Workers receive a concrete goal, explicit
 file or module ownership, acceptance criteria, validation commands, and an
 expected evidence format. Terra and Luna may run in parallel only when their
 write scopes are disjoint.
+
+### Assurance modes
+
+| Mode | Use it for | Acceptance |
+| --- | --- | --- |
+| Standard | Ordinary bounded implementation | Parent inspects the complete diff and reruns proportionate checks |
+| Strict | Auth, authorization, secrets, tenant isolation, money, data integrity, migrations, destructive behavior, concurrency, public APIs, production-critical paths, and wide refactors | Standard verification plus a fresh read-only `solweaver_reviewer` verdict |
+
+Strict review is intentionally fresh-context and read-only. The reviewer never
+implements its findings. Any `fix-first` result returns to the responsible
+worker and requires parent verification plus another fresh review.
 
 ## What's included
 
@@ -142,6 +169,7 @@ write scopes are disjoint.
 | [`skills/solweaver/`](./skills/solweaver/) | Codex skill and UI metadata |
 | [`agents/terra-worker.toml`](./agents/terra-worker.toml) | Terra worker definition at `max` |
 | [`agents/luna-worker.toml`](./agents/luna-worker.toml) | Luna worker definition at `max` |
+| [`agents/solweaver-reviewer.toml`](./agents/solweaver-reviewer.toml) | Fresh read-only Sol reviewer for strict mode |
 | [`examples/config.toml`](./examples/config.toml) | Parent runtime and concurrency example |
 | [`examples/AGENTS.md`](./examples/AGENTS.md) | Minimal global routing policy |
 | [`scripts/install.py`](./scripts/install.py) | Dependency-free, no-overwrite installer |
@@ -153,9 +181,12 @@ write scopes are disjoint.
 - Orchestration stays with Sol; a worker cannot silently take over the team.
 - Writing agents must preserve unrelated changes and stay inside their assigned
   ownership.
+- Native subagents are assumed to share the active worktree unless the host
+  explicitly reports isolation.
+- A configured model is not described as observed runtime unless runtime or
+  spawn metadata exposes it.
 - High-risk auth, money, tenant-isolation, data-integrity, concurrency, and
-  production paths stay on the Terra/parent route and should receive an
-  independent security review.
+  production paths stay on the Terra/parent route and require strict review.
 - The skill does not authorize deployment, production mutation, pushing,
   merging, or pull-request creation.
 

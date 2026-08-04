@@ -48,6 +48,16 @@ def validate_skill() -> None:
     require(bool(body), "SKILL.md body must not be empty")
     require("terra_worker" in text, "skill must route Terra work")
     require("luna_worker" in text, "skill must route Luna work")
+    require("solweaver_reviewer" in text, "skill must define strict review")
+    require("standard mode" in text, "skill must define standard assurance")
+    require("strict mode" in text, "skill must define strict assurance")
+
+    contracts = (SKILL_DIR / "references" / "contracts.md").read_text(
+        encoding="utf-8"
+    )
+    require("Worker task packet" in contracts, "missing worker task contract")
+    require("Strict review packet" in contracts, "missing strict review contract")
+    require("VERDICT: ship | fix-first | rethink" in contracts, "missing verdicts")
 
     ui = (SKILL_DIR / "agents" / "openai.yaml").read_text(encoding="utf-8")
     require(
@@ -56,7 +66,14 @@ def validate_skill() -> None:
     )
 
 
-def validate_worker(filename: str, name: str, model: str) -> None:
+def validate_agent(
+    filename: str,
+    name: str,
+    model: str,
+    *,
+    effort: str = "max",
+    sandbox_mode: str | None = None,
+) -> None:
     path = ROOT / "agents" / filename
     with path.open("rb") as handle:
         data = tomllib.load(handle)
@@ -64,13 +81,18 @@ def validate_worker(filename: str, name: str, model: str) -> None:
     require(data.get("name") == name, f"{filename}: incorrect agent name")
     require(data.get("model") == model, f"{filename}: incorrect model")
     require(
-        data.get("model_reasoning_effort") == "max",
-        f"{filename}: reasoning effort must be max",
+        data.get("model_reasoning_effort") == effort,
+        f"{filename}: reasoning effort must be {effort}",
     )
     require(
         bool(data.get("developer_instructions")),
         f"{filename}: missing developer instructions",
     )
+    if sandbox_mode is not None:
+        require(
+            data.get("sandbox_mode") == sandbox_mode,
+            f"{filename}: sandbox_mode must be {sandbox_mode}",
+        )
 
 
 def validate_examples() -> None:
@@ -81,20 +103,39 @@ def validate_examples() -> None:
         config.get("model_reasoning_effort") == "max",
         "parent reasoning effort must be max",
     )
-    require(config.get("agents", {}).get("max_depth") == 1, "max_depth must be 1")
+    agents = config.get("agents", {})
+    require(agents.get("enabled") is True, "agents must be enabled")
+    require(
+        agents.get("max_concurrent_threads_per_session") == 2,
+        "concurrent spawned-agent limit must be 2",
+    )
+    require("max_threads" not in agents, "use the current concurrency key")
 
     policy = (ROOT / "examples" / "AGENTS.md").read_text(encoding="utf-8")
     require(f"${SKILL_NAME}" in policy, "AGENTS example must load the skill")
     require("terra_worker" in policy, "AGENTS example must mention Terra")
     require("luna_worker" in policy, "AGENTS example must mention Luna")
+    require(
+        "solweaver_reviewer" in policy,
+        "AGENTS example must mention strict reviewer",
+    )
 
 
 def main() -> int:
     validate_skill()
-    validate_worker("terra-worker.toml", "terra_worker", "gpt-5.6-terra")
-    validate_worker("luna-worker.toml", "luna_worker", "gpt-5.6-luna")
+    validate_agent("terra-worker.toml", "terra_worker", "gpt-5.6-terra")
+    validate_agent("luna-worker.toml", "luna_worker", "gpt-5.6-luna")
+    validate_agent(
+        "solweaver-reviewer.toml",
+        "solweaver_reviewer",
+        "gpt-5.6-sol",
+        sandbox_mode="read-only",
+    )
     validate_examples()
-    print("Validation passed: Sol orchestrator, Terra max, Luna max.")
+    print(
+        "Validation passed: Sol orchestrator, Terra/Luna workers, "
+        "strict Sol reviewer, and concurrency 2."
+    )
     return 0
 
 

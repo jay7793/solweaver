@@ -20,3 +20,9 @@ Give every writing agent explicit file or module ownership, expected output,
 validation commands, and disjoint write scope. Keep the parent on the critical
 path, review every worker change, and verify the integrated result before
 calling the task complete.
+
+Use Solweaver strict mode for auth, authorization, secrets, tenant isolation,
+money, data integrity, migrations, destructive behavior, concurrency, public
+APIs, production-critical paths, and wide architectural refactors. Strict mode
+requires a fresh read-only `solweaver_reviewer` verdict after parent
+verification.

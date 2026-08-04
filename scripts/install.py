@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install the skill and worker definitions without overwriting existing files."""
+"""Install the skill and agent definitions without overwriting existing files."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ SKILL_NAME = "solweaver"
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Install Solweaver and its Terra/Luna workers."
+        description="Install Solweaver, its Terra/Luna workers, and strict reviewer."
     )
     parser.add_argument(
         "--codex-home",
@@ -37,6 +37,9 @@ def main() -> int:
         ),
         REPO_ROOT / "agents" / "luna-worker.toml": (
             codex_home / "agents" / "luna-worker.toml"
+        ),
+        REPO_ROOT / "agents" / "solweaver-reviewer.toml": (
+            codex_home / "agents" / "solweaver-reviewer.toml"
         ),
     }
 

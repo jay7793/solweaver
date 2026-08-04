@@ -3,5 +3,6 @@ model = "gpt-5.6-sol"
 model_reasoning_effort = "max"
 
 [agents]
-max_threads = 6
-max_depth = 1
+enabled = true
+# This cap counts spawned-agent threads and excludes the primary Sol thread.
+max_concurrent_threads_per_session = 2

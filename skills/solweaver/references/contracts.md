@@ -10,6 +10,9 @@ ROLE
 Act as the assigned implementation worker. You are not alone in the codebase.
 Preserve unrelated edits and own only the scope below.
 
+EXECUTION MODE
+<auto | team>
+
 OBJECTIVE
 <Observable outcome and why it matters.>
 
@@ -58,6 +61,9 @@ filesystem permissions.
 ROLE
 Act as a fresh read-only reviewer. Do not edit files, implement fixes, commit,
 push, or orchestrate other agents.
+
+EXECUTION MODE
+<auto | solo-reviewed | team>
 
 OBJECTIVE
 <Original objective and acceptance criteria.>

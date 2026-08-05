@@ -1,8 +1,8 @@
 <div align="center">
   <img src="./assets/solweaver-mark.svg" width="92" height="92" alt="Solweaver logo">
   <h1>Solweaver</h1>
-  <p><strong>One orchestrator. Two purpose-built workers. Adaptive assurance.</strong></p>
-  <p>A practical Codex software team led by GPT-5.6 Sol, with GPT-5.6 Terra and Luna as bounded workers and a fresh Sol reviewer for strict-risk changes.</p>
+  <p><strong>One Sol lead. Solo or team. Adaptive assurance.</strong></p>
+  <p>A practical Codex software workflow where GPT-5.6 Sol can work alone, add a fresh reviewer, or lead GPT-5.6 Terra and Luna as bounded workers.</p>
   <p>
     <a href="https://github.com/jay7793/solweaver/actions/workflows/validate.yml"><img src="https://img.shields.io/github/actions/workflow/status/jay7793/solweaver/validate.yml?branch=main&amp;style=flat-square&amp;label=validate" alt="Validation status"></a>
     <a href="https://github.com/jay7793/solweaver/releases/latest"><img src="https://img.shields.io/github/v/release/jay7793/solweaver?style=flat-square&amp;label=release" alt="Latest release"></a>
@@ -26,17 +26,18 @@
 ## Why Solweaver
 
 Multi-agent workflows are useful only when ownership stays clear. Solweaver
-keeps one agent accountable for the whole outcome while routing bounded work to
-the model that fits it best.
+keeps one agent accountable for the whole outcome, works solo when that is
+enough, and routes bounded work only when delegation adds value.
 
 | Sol leads | Terra builds | Luna accelerates |
 | --- | --- | --- |
-| Plans, delegates, integrates, reviews, and delivers | Handles coupled, ambiguous, multi-file, and judgment-heavy implementation | Handles narrow, mechanical, repetitive, and high-throughput assignments |
+| Plans, implements solo or delegates, integrates, reviews, and delivers | Handles coupled, ambiguous, multi-file, and judgment-heavy implementation | Handles narrow, mechanical, repetitive, and high-throughput assignments |
 
 - **One accountable lead:** Sol remains on the critical path from plan to final
   evidence.
-- **Purposeful routing:** Terra is the default worker; Luna is selected when the
-  work is bounded and low-coupling.
+- **Purposeful routing:** auto mode keeps work with Sol when delegation would
+  not help; Terra is the default worker, while Luna handles bounded,
+  low-coupling work.
 - **Safe parallelism:** workers run together only when their ownership is
   explicit and their write scopes are disjoint.
 - **Verification built in:** worker summaries are not treated as proof; Sol
@@ -109,7 +110,7 @@ spawned agents.
 Restart Codex or open a new task so the skill, agents, model, and reasoning
 settings are reloaded.
 
-### 3. Start a team task
+### 3. Start a Solweaver task
 
 Invoke the skill explicitly:
 
@@ -126,8 +127,45 @@ Solweaver automatically.
 ## Usage
 
 You usually only need to describe the outcome. Sol keeps ownership of the plan,
-chooses the smallest useful team, reviews the actual changes, and reports the
-evidence.
+chooses solo execution or the smallest useful team, reviews the actual changes,
+and reports the evidence.
+
+### Choose an execution mode
+
+| Mode | Implementation | Independent review |
+| --- | --- | --- |
+| `auto` (default) | Sol decides between working solo and using the smallest useful team | Added when strict assurance applies |
+| `solo` | Sol plans, implements, and verifies alone; no subagents are spawned | None; standard assurance only |
+| `solo-reviewed` | Sol implements and verifies alone; no implementation workers are spawned | One fresh read-only Sol reviewer per verified review round |
+| `team` | At least one bounded Terra or Luna worker implements under Sol ownership | Added when strict assurance applies |
+
+Invoking Solweaver without a mode uses `auto`; it does not automatically spawn
+Terra or Luna.
+
+Keep a small change entirely with Sol:
+
+```text
+$solweaver
+
+Use solo mode.
+
+Goal: fix the validation bug and add a focused regression test.
+```
+
+Keep implementation with Sol but require an independent final gate:
+
+```text
+$solweaver
+
+Use solo-reviewed mode.
+
+Goal: update the authorization boundary and verify the affected behavior.
+```
+
+`solo-reviewed` uses strict acceptance. Plain `solo` cannot claim strict
+completion because a parent self-review is not independent. If a solo request
+also triggers strict risk, Sol asks whether to continue without strict
+acceptance or switch to `solo-reviewed`.
 
 ### Standard mode
 
@@ -139,8 +177,8 @@ $solweaver
 Goal: add profile editing with validation and regression tests.
 ```
 
-Sol decides whether delegation adds value, routes coupled implementation to
-Terra and narrow work to Luna, then inspects and verifies the integrated result.
+In the default `auto` execution mode, Sol decides whether delegation adds value,
+then inspects and verifies the complete result.
 
 ### Strict mode
 
@@ -159,7 +197,8 @@ secrets, tenant isolation, money, data integrity, migrations, destructive
 behavior, concurrency, public APIs, production-critical paths, and wide
 architectural refactors. Strict completion requires a reviewer verdict of
 `ship`; `fix-first` returns findings to the responsible worker, while `rethink`
-returns the architecture to Sol.
+returns the architecture to Sol. Strict assurance is compatible with `auto`,
+`solo-reviewed`, and `team`, but not plain `solo`.
 
 ### Steer worker selection
 
@@ -208,7 +247,7 @@ Sol should finish with:
 
 - the usable outcome and changed-file scope;
 - verification commands actually run and their concrete results;
-- the assurance mode and strict-review verdict when applicable;
+- the execution mode, assurance mode, and strict-review verdict when applicable;
 - remaining gaps, risks, or behavior that was not proved; and
 - external actions such as commit, push, pull request, merge, or deployment
   still waiting for explicit authorization.
@@ -217,22 +256,26 @@ Sol should finish with:
 
 ```mermaid
 flowchart LR
-    G["Software goal"] --> S["Sol max<br/>Plan and delegate"]
+    G["Software goal"] --> M{"Execution mode"}
+    M -->|"solo or solo-reviewed"| P["Sol max<br/>Implement and verify"]
+    M -->|"auto or team"| S{"Delegate?"}
+    S -->|"No, auto"| P
     S -->|"Coupled or judgment-heavy"| T["Terra max<br/>Default worker"]
     S -->|"Narrow or high-throughput"| L["Luna max<br/>Bounded worker"]
     T --> I["Sol max<br/>Integrate and verify"]
     L --> I
-    I --> A{"Strict risk?"}
+    P --> I
+    I --> A{"Fresh review required?"}
     A -->|"No"| R["Evidence-backed result"]
     A -->|"Yes"| V["Fresh Sol max<br/>Read-only review"]
     V -->|"ship"| R
-    V -->|"fix-first"| S
-    V -->|"rethink"| S
+    V -->|"fix-first or rethink"| X["Revise and verify again"]
+    X --> I
 ```
 
 | Role | Runtime | Best fit |
 | --- | --- | --- |
-| Orchestrator | `gpt-5.6-sol` / `max` | Planning, decomposition, ownership, integration, review, and delivery |
+| Orchestrator and solo implementer | `gpt-5.6-sol` / `max` | Planning, solo implementation, decomposition, ownership, integration, review, and delivery |
 | Default worker | `gpt-5.6-terra` / `max` | Coupled, ambiguous, multi-file, architecture-sensitive, backend, frontend, database, integration, debugging, and refactoring work |
 | Bounded worker | `gpt-5.6-luna` / `max` | Narrow, mechanical, repetitive, documentation-adjacent, high-throughput, or independent file clusters |
 | Strict reviewer | `gpt-5.6-sol` / `max`, read-only | Fresh-context review for high-risk or wide changes; returns `ship`, `fix-first`, or `rethink` |
@@ -249,12 +292,13 @@ are disjoint.
 
 | Mode | Use it for | Acceptance |
 | --- | --- | --- |
-| Standard | Ordinary bounded implementation | Parent inspects the complete diff and reruns proportionate checks |
-| Strict | Auth, authorization, secrets, tenant isolation, money, data integrity, migrations, destructive behavior, concurrency, public APIs, production-critical paths, and wide refactors | Standard verification plus a fresh read-only `solweaver_reviewer` verdict |
+| Standard | Ordinary work in `auto`, `solo`, or `team` execution | Parent inspects the complete diff and reruns proportionate checks |
+| Strict | `solo-reviewed`, or auth, authorization, secrets, tenant isolation, money, data integrity, migrations, destructive behavior, concurrency, public APIs, production-critical paths, and wide refactors in `auto` or `team` | Standard verification plus a fresh read-only `solweaver_reviewer` verdict |
 
 Strict review is intentionally fresh-context and read-only. The reviewer never
 implements its findings. Any `fix-first` result returns to the responsible
-worker and requires parent verification plus another fresh review.
+worker, or to Sol in `solo-reviewed`, and requires parent verification plus
+another fresh review.
 
 ## What's included
 
@@ -280,7 +324,8 @@ worker and requires parent verification plus another fresh review.
 - A configured model is not described as observed runtime unless runtime or
   spawn metadata exposes it.
 - High-risk auth, money, tenant-isolation, data-integrity, concurrency, and
-  production paths stay on the Terra/parent route and require strict review.
+  production paths stay under parent control and require fresh strict review;
+  plain `solo` cannot claim strict acceptance.
 - The skill does not authorize deployment, production mutation, pushing,
   merging, or pull-request creation.
 

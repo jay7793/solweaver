@@ -1,22 +1,21 @@
 ---
 name: solweaver
 description: >-
-  Orchestrate bounded multi-agent software development with GPT-5.6 Sol owning
-  planning, delegation, integration, verification, and delivery; terra_worker
-  handling coupled or judgment-heavy implementation; luna_worker handling
-  narrow or high-throughput assignments; and solweaver_reviewer providing a
-  fresh read-only review for strict-risk work. Use for software-development
-  prompts beginning with Goal: or /goal, or when the user asks for a software
-  team, team mode, agents, subagents, parallel work, or delegated feature
-  implementation. Do not use for general questions, research, writing,
-  operations-only requests, or small fixes where delegation adds no value.
+  Run Sol-led software development in auto, solo, solo-reviewed, or team modes,
+  with GPT-5.6 Sol owning planning, implementation or delegation, integration,
+  verification, and delivery; terra_worker and luna_worker providing bounded
+  implementation; and solweaver_reviewer providing fresh strict review. Use
+  for software-development prompts beginning with Goal: or /goal, or when the
+  user requests Sol-only work, a software team, agents, subagents, parallel
+  work, or delegated implementation. Do not use for general questions,
+  research, writing, or operations-only requests.
 ---
 
 # Solweaver
 
-Coordinate the team without delegating orchestration itself. Keep the main
-agent on the critical path. Use the smallest team that materially improves
-speed, context isolation, or review quality.
+Coordinate execution without delegating orchestration itself. Keep the main
+agent on the critical path. Work solo or use the smallest team that materially
+improves speed, context isolation, or review quality.
 
 ## Preflight
 
@@ -26,8 +25,8 @@ speed, context isolation, or review quality.
    ownership.
 3. Keep the active parent as orchestrator. The intended parent configuration is
    `gpt-5.6-sol` at `max`, but this skill cannot select or prove the runtime.
-4. Inspect available agent types before routing. Do not silently substitute a
-   missing worker or reviewer.
+4. When the selected mode permits agents, inspect available agent types before
+   routing. Do not silently substitute a missing worker or reviewer.
 5. Describe model evidence precisely:
    - **Observed**: public runtime or spawn metadata reports role, model, or
      effort.
@@ -40,22 +39,44 @@ speed, context isolation, or review quality.
 7. Preserve user changes, repository boundaries, and explicit external-action
    approval requirements.
 
+## Choose execution mode
+
+- Use **auto mode** when the user does not name a mode. Sol chooses local solo
+  execution or the smallest useful team; invoking Solweaver alone does not
+  require a subagent.
+- Use **solo mode** when the user wants Sol alone. Sol plans, implements,
+  verifies, and delivers without spawning any worker or reviewer. Solo supports
+  standard assurance only.
+- Use **solo-reviewed mode** when the user wants Sol to implement alone with an
+  independent final gate. Do not spawn implementation workers; after parent
+  verification, spawn one fresh `solweaver_reviewer` at a time and apply strict
+  acceptance, including a fresh review after any fix round.
+- Use **team mode** when the user explicitly requests delegation. Spawn at
+  least one bounded implementation worker, while Sol retains integration and
+  verification. Add the fresh reviewer when strict assurance applies.
+- Honor an explicit mode without silently changing it. If solo mode conflicts
+  with a user-requested or risk-triggered strict review, stop before
+  implementation and ask the user to choose solo without strict acceptance or
+  solo-reviewed.
+
 ## Choose assurance
 
-- Use **standard mode** for ordinary bounded implementation. Sol inspects the
-  diff, reruns verification, and accepts or returns the work.
+- Use **standard mode** for ordinary work in auto, solo, or team execution. Sol
+  inspects the diff, reruns verification, and accepts or returns the work.
 - Use **strict mode** when the user requests it or the change affects auth,
   authorization, secrets, tenant isolation, money, data integrity, migrations,
   destructive behavior, concurrency, public APIs, production-critical paths,
   or a wide architectural refactor.
-- In strict mode, require a fresh `solweaver_reviewer` verdict after parent
-  verification. If the reviewer is unavailable, do not claim strict completion.
-- Skip team mode for a small fix when delegation would cost more coordination
-  than it saves.
+- Apply strict mode to auto or team execution, and always apply it to
+  solo-reviewed execution. Require a fresh `solweaver_reviewer` verdict after
+  parent verification. If the reviewer is unavailable, do not claim strict
+  completion.
+- Never describe solo execution or a parent self-review as independent strict
+  review.
 
 ## Plan and decompose
 
-1. Form a short outcome-focused plan before delegation.
+1. Form a short outcome-focused plan before implementation or delegation.
 2. Identify the immediate blocker and keep it with the parent when local
    progress depends on it.
 3. Split only bounded work. Parallelize only assignments that are independent
@@ -74,6 +95,14 @@ speed, context isolation, or review quality.
 
 ## Select agents
 
+Apply the selected execution mode before routing:
+
+- In solo mode, do not spawn any agent.
+- In solo-reviewed mode, spawn no implementation worker and reserve reviewer
+  spawns for the final strict gate and any required re-review.
+- In team mode, spawn at least one bounded implementation worker.
+- In auto mode, spawn only agents that materially improve the outcome.
+
 - Use `terra_worker` for the default implementation path and for ambiguous,
   coupled, multi-file, architecture-sensitive, backend, frontend, database,
   integration, debugging, and refactoring work.
@@ -89,11 +118,14 @@ speed, context isolation, or review quality.
   current runtime exposes them and their specialization materially helps.
 - Use another implementation agent only when the user explicitly requests it.
 
-Spawn only the agents that materially help. Parallelize disjoint assignments
-within the configured concurrency limit; the limit is a ceiling, not a target.
-Terra and Luna may run together only when their ownership is disjoint.
+When workers are allowed, parallelize disjoint assignments within the
+configured concurrency limit; the limit is a ceiling, not a target. Terra and
+Luna may run together only when their ownership is disjoint.
 
 ## Coordinate execution
+
+Apply these rules to active subagents. In solo mode, keep all execution local
+to the parent.
 
 1. Tell every writing agent it is not alone in the codebase, must preserve
    unrelated edits, and owns only its assigned scope.
@@ -112,8 +144,8 @@ Terra and Luna may run together only when their ownership is disjoint.
 
 ## Integrate and verify
 
-1. Treat worker reports as claims. Inspect the working tree, complete diff, and
-   changed-file scope.
+1. When workers exist, treat their reports as claims. In every mode, inspect
+   the working tree, complete diff, and changed-file scope.
 2. Review for correctness, maintainability, contract compatibility, and
    interaction with concurrent edits.
 3. Rerun focused checks first, then broader checks proportionate to risk.
@@ -121,19 +153,22 @@ Terra and Luna may run together only when their ownership is disjoint.
    production evidence; one level does not prove another.
 4. Compare the evidence with the original acceptance criteria and note anything
    not run or not proved.
-5. In strict mode, spawn a fresh `solweaver_reviewer` with
+5. In strict mode, including solo-reviewed execution, spawn a fresh
+   `solweaver_reviewer` with
    `fork_turns="none"` after parent verification. Send the strict review packet
    and require exactly `ship`, `fix-first`, or `rethink`.
-6. On `fix-first`, return concrete findings to the responsible worker, verify
-   again, and obtain a new fresh review. On `rethink`, revise the architecture
-   before more implementation. Only `ship` permits strict acceptance.
+6. On `fix-first`, return concrete findings to the responsible worker, or fix
+   them in the parent for solo-reviewed execution. Verify again and obtain a
+   new fresh review. On `rethink`, revise the architecture before more
+   implementation. Only `ship` permits strict acceptance.
 7. Stop completed subagent threads when the current surface supports it.
 
 ## Deliver
 
 Lead with the usable outcome. Report changed files, verification actually run,
-the assurance mode, reviewer verdict when applicable, remaining risks or
-unsupported behavior, and any action still requiring user approval. Do not
-describe configured routing as observed runtime, or repository checks as live
-production evidence. Do not deploy, mutate production, commit, merge, push, or
-open a pull request unless the user authorized that external action.
+the execution mode, assurance mode, reviewer verdict when applicable,
+remaining risks or unsupported behavior, and any action still requiring user
+approval. Do not describe configured routing as observed runtime, or repository
+checks as live production evidence. Do not deploy, mutate production, commit,
+merge, push, or open a pull request unless the user authorized that external
+action.

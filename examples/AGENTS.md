@@ -12,6 +12,12 @@ explicit request to use a software team, agents, subagents, delegation, or
 parallel work, as authorization to use bounded subagents when they materially
 help.
 
+Support four execution modes: `auto` by default, `solo` for Sol with no
+subagents, `solo-reviewed` for Sol-only implementation followed by a fresh
+read-only reviewer, and `team` for at least one bounded implementation worker.
+Honor an explicit mode. Do not claim strict acceptance for `solo`; if strict
+assurance is required, ask the user to choose `solo-reviewed` or a team mode.
+
 Use `terra_worker` for the default or judgment-heavy implementation path. Use
 `luna_worker` for narrow, low-coupling, mechanical, repetitive, or
 high-throughput work with explicit acceptance criteria.

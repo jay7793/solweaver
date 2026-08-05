@@ -51,6 +51,16 @@ def validate_skill() -> None:
     require("solweaver_reviewer" in text, "skill must define strict review")
     require("standard mode" in text, "skill must define standard assurance")
     require("strict mode" in text, "skill must define strict assurance")
+    for mode in ("auto mode", "solo mode", "solo-reviewed mode", "team mode"):
+        require(mode in text, f"skill must define {mode}")
+    require(
+        "do not spawn any agent" in text,
+        "solo mode must prohibit subagent spawning",
+    )
+    require(
+        "Never describe solo execution" in text,
+        "solo mode must not claim strict review",
+    )
 
     contracts = (SKILL_DIR / "references" / "contracts.md").read_text(
         encoding="utf-8"
@@ -61,6 +71,10 @@ def validate_skill() -> None:
     require(
         contracts.count("REPORT LANGUAGE") == 2,
         "worker and reviewer packets must define report language",
+    )
+    require(
+        contracts.count("EXECUTION MODE") == 2,
+        "worker and reviewer packets must define execution mode",
     )
 
     ui = (SKILL_DIR / "agents" / "openai.yaml").read_text(encoding="utf-8")
@@ -127,6 +141,7 @@ def validate_examples() -> None:
         "solweaver_reviewer" in policy,
         "AGENTS example must mention strict reviewer",
     )
+    require("solo-reviewed" in policy, "AGENTS example must define solo-reviewed")
 
 
 def main() -> int:
@@ -141,8 +156,8 @@ def main() -> int:
     )
     validate_examples()
     print(
-        "Validation passed: Sol orchestrator, Terra/Luna workers, "
-        "strict Sol reviewer, and concurrency 2."
+        "Validation passed: auto/solo/solo-reviewed/team execution, "
+        "Terra/Luna workers, strict Sol reviewer, and concurrency 2."
     )
     return 0
 

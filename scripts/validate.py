@@ -58,6 +58,10 @@ def validate_skill() -> None:
     require("Worker task packet" in contracts, "missing worker task contract")
     require("Strict review packet" in contracts, "missing strict review contract")
     require("VERDICT: ship | fix-first | rethink" in contracts, "missing verdicts")
+    require(
+        contracts.count("REPORT LANGUAGE") == 2,
+        "worker and reviewer packets must define report language",
+    )
 
     ui = (SKILL_DIR / "agents" / "openai.yaml").read_text(encoding="utf-8")
     require(
@@ -87,6 +91,10 @@ def validate_agent(
     require(
         bool(data.get("developer_instructions")),
         f"{filename}: missing developer instructions",
+    )
+    require(
+        "English" in data.get("developer_instructions", ""),
+        f"{filename}: communication must default to English",
     )
     if sandbox_mode is not None:
         require(

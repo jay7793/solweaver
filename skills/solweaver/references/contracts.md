@@ -25,6 +25,11 @@ CONSTRAINTS
 - Do not deploy, mutate production, merge, push, or open a pull request.
 - Return a blocker before changing files outside ownership.
 
+REPORT LANGUAGE
+English by default. Use <another language> only when the parent explicitly
+requests it. Keep repository content in the language required by the task and
+repository conventions.
+
 ACCEPTANCE
 - <Concrete behavior or artifact that must be true>
 - <Regression or compatibility condition>
@@ -70,6 +75,10 @@ EVIDENCE
 - Diff inspected by parent: <yes and summary>
 - Commands rerun by parent: <commands and concrete results>
 - Known gaps: <not-run or unproved evidence>
+
+REPORT LANGUAGE
+English by default. Use <another language> only when the parent explicitly
+requests it. Preserve quoted repository content when fidelity matters.
 
 REVIEW
 Inspect the actual files and complete diff. Prioritize correctness, regressions,

@@ -65,7 +65,11 @@ speed, context isolation, or review quality.
 5. Send every worker the complete task packet from that reference. Use
    `fork_turns="none"` when selecting a custom worker so the packet, not leaked
    parent context, defines the assignment.
-6. Keep shared-file edits, unresolved design decisions, and dependency chains
+6. Keep delegated communication and reports in English by default. Set another
+   report language explicitly in the task packet only when the user-facing
+   workflow or parent integration needs it. Repository content still follows
+   the task and repository conventions.
+7. Keep shared-file edits, unresolved design decisions, and dependency chains
    serial.
 
 ## Select agents

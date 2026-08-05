@@ -239,8 +239,11 @@ flowchart LR
 
 Sol owns orchestration throughout. Workers receive a concrete goal, explicit
 file or module ownership, acceptance criteria, validation commands, and an
-expected evidence format. Terra and Luna may run in parallel only when their
-write scopes are disjoint.
+expected evidence format. Delegated communication and reports use English by
+default; Sol can explicitly request another report language when the workflow
+needs it. Code and repository content continue to follow the task and local
+conventions. Terra and Luna may run in parallel only when their write scopes
+are disjoint.
 
 ### Assurance modes
 

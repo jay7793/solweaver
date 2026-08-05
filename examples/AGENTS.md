@@ -21,6 +21,10 @@ validation commands, and disjoint write scope. Keep the parent on the critical
 path, review every worker change, and verify the integrated result before
 calling the task complete.
 
+Use English for delegated agent communication and reports by default. Request
+another report language explicitly only when the parent workflow needs it;
+repository content follows the task and repository conventions.
+
 Use Solweaver strict mode for auth, authorization, secrets, tenant isolation,
 money, data integrity, migrations, destructive behavior, concurrency, public
 APIs, production-critical paths, and wide architectural refactors. Strict mode

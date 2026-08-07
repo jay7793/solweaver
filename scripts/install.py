@@ -16,7 +16,7 @@ SKILL_NAME = "solweaver"
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Install Solweaver, its Terra/Luna workers, and strict reviewer."
+        description="Install Solweaver, its Terra/Luna workers, and final-strict reviewer."
     )
     parser.add_argument(
         "--codex-home",

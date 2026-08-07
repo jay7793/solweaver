@@ -54,9 +54,14 @@ def validate_skill() -> None:
     require(bool(body), "SKILL.md body must not be empty")
     require("terra_worker" in text, "skill must route Terra work")
     require("luna_worker" in text, "skill must route Luna work")
-    require("solweaver_reviewer" in text, "skill must define strict review")
+    require("solweaver_reviewer" in text, "skill must define final-strict review")
     require("standard mode" in text, "skill must define standard assurance")
-    require("strict mode" in text, "skill must define strict assurance")
+    require("final-strict mode" in text, "skill must define final-strict assurance")
+    require(
+        "Final-strict is the only independent-review assurance mode" in text,
+        "skill must prohibit a separate strict assurance mode",
+    )
+    require("Use **strict mode**" not in text, "legacy strict mode must be removed")
     for mode in ("auto mode", "solo mode", "solo-reviewed mode", "team mode"):
         require(mode in text, f"skill must define {mode}")
     require(
@@ -78,11 +83,22 @@ def validate_skill() -> None:
         "self-report",
         "never roll",
         "back child edits automatically",
-        "child runtime checks",
+        "re-review rounds, child",
+        "runtime checks and any mismatched",
         "`fix-first` closure matrix",
-        "After two consecutive `fix-first` verdicts",
         "design/acceptance reconciliation",
         "re-review rounds",
+        "checkpoint-ready",
+        "complete cumulative diff from the",
+        "protected irreversible or production",
+        "Never describe an intermediate final-strict checkpoint",
+        "`MAX_REVIEW_CALLS = 2`",
+        "third reviewer for the same batch",
+        "`REVIEW_STATUS: review-exhausted`",
+        "Do not spawn call 3",
+        "`FINAL_STATUS: parent-completed`",
+        "`ASSURANCE_STATUS: final-strict-not-achieved`",
+        "Do not ask the user merely to",
     ):
         require(term in text, f"SKILL.md missing runtime contract text: {term}")
 
@@ -90,7 +106,10 @@ def validate_skill() -> None:
         encoding="utf-8"
     )
     require("Worker task packet" in contracts, "missing worker task contract")
-    require("Strict review packet" in contracts, "missing strict review contract")
+    require(
+        "Final-strict review packet" in contracts,
+        "missing final-strict review contract",
+    )
     require("VERDICT: ship | fix-first | rethink" in contracts, "missing verdicts")
     require(
         contracts.count("REPORT LANGUAGE") == 2,
@@ -100,6 +119,15 @@ def validate_skill() -> None:
         contracts.count("EXECUTION MODE") == 2,
         "worker and reviewer packets must define execution mode",
     )
+    require(
+        contracts.count("ASSURANCE MODE") == 2,
+        "worker and reviewer packets must define assurance mode",
+    )
+    require(
+        "<standard | final-strict | strict>" not in contracts
+        and "<final-strict | strict>" not in contracts,
+        "contracts must not expose legacy strict assurance",
+    )
     for term in (
         "Runtime identity gates",
         "`terra_worker` | `gpt-5.6-terra` | `max`",
@@ -108,10 +136,22 @@ def validate_skill() -> None:
         "do not infer sandbox",
         "Do not revert or delete child edits",
         "`fix-first` closure matrix",
-        "Design/acceptance reconciliation",
-        "After two consecutive `fix-first` verdicts",
+        "Review-budget exhaustion and parent completion",
+        "Final-strict batch ledger",
+        "checkpoint-ready",
+        "Complete cumulative diff from base",
+        "Final-strict protected boundaries",
+        "NEXT_REVIEW_ALLOWED: no",
+        "same unchanged batch",
+        "USER_DECISION_REQUIRED: no",
+        "FINAL_STATUS: parent-completed | blocked-external-boundary",
+        "ASSURANCE_STATUS: final-strict-not-achieved",
     ):
         require(term in contracts, f"contracts missing runtime gate text: {term}")
+    require(
+        contracts.count("MAX_REVIEW_CALLS: 2") == 3,
+        "ledger, review packet, and exhaustion report must pin two calls",
+    )
 
     runtime_smoke = (
         SKILL_DIR / "references" / "runtime-smoke-test.md"
@@ -124,7 +164,17 @@ def validate_skill() -> None:
         'effort == "max"',
         "model-generated self-report",
         "focused routing smoke is not full implementation end-to-end proof",
-        "pauses for design/acceptance reconciliation after two",
+        "final-strict mode",
+        "checkpoint-ready",
+        "complete cumulative",
+        "diff from the recorded base",
+        "protected irreversible",
+        "two-call hard gate",
+        "never spawns call 3",
+        "REVIEW_STATUS: review-exhausted",
+        "FINAL_STATUS: parent-completed",
+        "ASSURANCE_STATUS: final-strict-not-achieved",
+        "without requesting user direction",
     ):
         require(term in runtime_smoke, f"runtime smoke test missing: {term}")
 
@@ -168,6 +218,11 @@ def validate_agent(
             data.get("sandbox_mode") == sandbox_mode,
             f"{filename}: sandbox_mode must be {sandbox_mode}",
         )
+    if name == "solweaver_reviewer":
+        require(
+            "final-strict" in data.get("description", ""),
+            f"{filename}: reviewer must be scoped to final-strict acceptance",
+        )
 
 
 def validate_examples() -> None:
@@ -195,6 +250,19 @@ def validate_examples() -> None:
         "AGENTS example must mention strict reviewer",
     )
     require("solo-reviewed" in policy, "AGENTS example must define solo-reviewed")
+    require("final-strict" in policy, "AGENTS example must define final-strict")
+    require("checkpoint-ready" in policy, "AGENTS example must bound checkpoints")
+    require(
+        "Support two assurance modes" in policy,
+        "AGENTS example must expose only standard and final-strict assurance",
+    )
+    require("MAX_REVIEW_CALLS = 2" in policy, "AGENTS example must cap reviews at 2")
+    require("never spawn call 3" in policy, "AGENTS example must enforce hard stop")
+    require("parent-completed" in policy, "AGENTS example must define parent recovery")
+    require(
+        "Do not request user direction merely" in policy,
+        "AGENTS example must keep review exhaustion parent-owned",
+    )
 
 
 def validate_package() -> None:
@@ -208,12 +276,21 @@ def validate_package() -> None:
         require(term in installer, f"installer missing upgrade contract: {term}")
 
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    require("### Strict mode" not in readme, "README must not expose strict mode")
     for term in (
         "Runtime identity gates",
         "python3 scripts/install.py --upgrade",
         "scripts/validate_install.py",
         "never rolls them back automatically",
-        "After two consecutive `fix-first` verdicts",
+        "Final-strict mode",
+        "complete cumulative diff",
+        "protected boundary",
+        "hard budget of two reviewer calls",
+        "never starts call 3",
+        "REVIEW_STATUS: review-exhausted",
+        "FINAL_STATUS: parent-completed",
+        "ASSURANCE_STATUS: final-strict-not-achieved",
+        "without asking the user merely",
     ):
         require(term in readme, f"README missing runtime or upgrade guidance: {term}")
 
@@ -238,7 +315,8 @@ def main() -> int:
     validate_package()
     print(
         "Validation passed: auto/solo/solo-reviewed/team execution, "
-        "runtime-gated Terra/Luna workers, strict Sol reviewer, safe upgrades, "
+        "standard/final-strict assurance, runtime-gated Terra/Luna workers, "
+        "final-strict Sol reviewer with a two-call hard gate, safe upgrades, "
         "and concurrency 2."
     )
     return 0

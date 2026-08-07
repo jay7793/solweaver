@@ -13,6 +13,9 @@ Preserve unrelated edits and own only the scope below.
 EXECUTION MODE
 <auto | team>
 
+ASSURANCE MODE
+<standard | final-strict>
+
 OBJECTIVE
 <Observable outcome and why it matters.>
 
@@ -51,7 +54,50 @@ JUDGMENT CALLS: <decisions made, or none>
 GAPS: <unfinished work, unrun checks, blockers, or none>
 ```
 
-## Strict review packet
+## Final-strict batch ledger
+
+Create this ledger before the first final-strict implementation checkpoint.
+Keep it in the parent task context unless the user authorizes a repository
+artifact. If the work spans tasks, reconstruct every field from exact Git and
+verification evidence before claiming continuity.
+
+```text
+BASE STATE
+- Ref or observed state: <exact SHA, branch/worktree, and initial dirty files>
+
+BATCH
+- Objective: <one coherent phase or delivery unit>
+- Acceptance criteria: <complete cumulative criteria>
+- Declared final boundary: <observable condition that triggers final-strict review>
+- Protected boundaries: <migration execution, money movement, production auth,
+  deploy, merge, release, or other irreversible actions that cannot be crossed>
+- MAX_REVIEW_CALLS: 2
+- REVIEW_CALLS_USED: <0 | 1 | 2>
+
+CHECKPOINTS
+| Checkpoint | Changed scope | Parent verification | Decisions | Known gaps | Status |
+| --- | --- | --- | --- | --- | --- |
+| <id> | <files/modules> | <commands and results> | <material choices> | <gaps or none> | checkpoint-ready |
+
+FINAL GATE
+- Complete cumulative diff from base: <command and observed scope>
+- Integration/acceptance evidence: <commands and concrete results>
+- Remaining gaps: <not-run or unproved behavior>
+- Ready for one fresh final-strict reviewer: <yes or blocker>
+
+REVIEW ATTEMPTS
+| Call | Runtime gate | Verdict | Outcome |
+| --- | --- | --- | --- |
+| <1 or 2> | <pass, mismatch, or unverified> | <ship, fix-first, rethink, or unusable> | <accepted, revise, or review-exhausted> |
+```
+
+`checkpoint-ready` means parent-verified progress only. It is not `ship`, an
+independent review, permission to cross a protected boundary, or evidence that
+the final cumulative diff is reviewable. If the batch becomes too broad or
+incoherent for one complete review, pause and ask the user to split it rather
+than omitting scope from the final packet.
+
+## Final-strict review packet
 
 Send this only after the parent has inspected the diff and rerun verification.
 The reviewer must remain behaviorally read-only even if the host grants broader
@@ -64,6 +110,14 @@ push, or orchestrate other agents.
 
 EXECUTION MODE
 <auto | solo-reviewed | team>
+
+ASSURANCE MODE
+<final-strict>
+
+REVIEW BUDGET
+- MAX_REVIEW_CALLS: 2
+- REVIEW_CALLS_USED: <1 or 2, including this call>
+- THIS_CALL: <1 or 2>
 
 OBJECTIVE
 <Original objective and acceptance criteria.>
@@ -81,6 +135,12 @@ EVIDENCE
 - Diff inspected by parent: <yes and summary>
 - Commands rerun by parent: <commands and concrete results>
 - Known gaps: <not-run or unproved evidence>
+
+FINAL-STRICT BATCH
+- Base state: <exact ref>
+- Declared final boundary: <boundary>
+- Complete cumulative diff: <command and observed scope>
+- Checkpoint ledger reconciled: <yes with summary>
 
 REPORT LANGUAGE
 English by default. Use <another language> only when the parent explicitly
@@ -103,24 +163,28 @@ RESIDUAL RISK: <remaining uncertainty, or none>
 
 ## `fix-first` closure matrix
 
-After a `fix-first` verdict, close that reviewer. The responsible worker, or
-Sol in solo-reviewed execution, implements the bounded changes. Sol then
+After a call 1 `fix-first` verdict, close that reviewer. The responsible worker,
+or Sol in solo-reviewed execution, implements the bounded changes. Sol then
 inspects the full diff, verifies the result, and completes this matrix before
-spawning a fresh reviewer:
+using the second and final review call. A call 2 `fix-first` goes directly to
+review-budget exhaustion; never spawn another reviewer.
 
 | Prior finding | Exact changed files | Intended behavior | Direct tests | Evidence class | Known limitations |
 | --- | --- | --- | --- | --- | --- |
 | <finding identity> | <paths> | <observable change> | <commands/tests and results> | <one class> | <remaining gap or none> |
 
-Send the neutral matrix with the next strict review packet as accountability
-evidence. Do not send the prior reviewer conversation, disposition, or an
-expected verdict. The fresh reviewer must inspect the complete diff
-independently and may reject a claimed closure or identify new problems.
+Send the neutral matrix with the second and final review packet as
+accountability evidence. Do not send the prior reviewer conversation,
+disposition, or an expected verdict. The fresh reviewer must inspect the
+complete diff independently and may reject a claimed closure or identify new
+problems.
 
-## Design/acceptance reconciliation
+## Review-budget exhaustion and parent completion
 
-After two consecutive `fix-first` verdicts, pause before spawning a third
-reviewer. Reconcile every remaining issue as one of:
+When review call 2 does not produce a valid `ship`, set
+`REVIEW_STATUS: review-exhausted`. Never spawn call 3 for the same batch. Sol
+owns the recovery and completes the authorized task without asking the user
+merely to resolve the review loop. Reconcile every remaining issue as one of:
 
 1. implementation defect;
 2. evidence defect;
@@ -128,12 +192,32 @@ reviewer. Reconcile every remaining issue as one of:
 4. mismatch between stated acceptance criteria and reviewer expectations.
 
 Record the classification, supporting facts, exact missing proof or decision,
-and proposed next action. When the issue is consequential or ambiguous, state
-the guarantee precisely, present viable choices with guarantees and
-limitations, and request user direction. Do not silently weaken semantics,
+and next action. Resolve decisions using this order: the original user goal and
+acceptance criteria, repository instructions and contracts, compatibility with
+existing behavior, then the narrowest reversible conservative implementation.
+Implement every addressable fix, inspect the complete diff, and rerun
+proportionate verification. Do not silently weaken semantics, expand authority,
 force a workflow switch, lower the review bar, or treat review count as
-permission to ship. A later strict acceptance still requires `ship` from a
-fresh runtime-verified reviewer.
+permission to claim final-strict acceptance.
+
+```text
+MAX_REVIEW_CALLS: 2
+REVIEW_CALLS_USED: 2
+REVIEW_STATUS: review-exhausted
+NEXT_REVIEW_ALLOWED: no
+PARENT_RECOVERY: reconcile-fix-verify
+FINAL_STATUS: parent-completed | blocked-external-boundary
+ASSURANCE_STATUS: final-strict-not-achieved
+USER_DECISION_REQUIRED: no
+```
+
+Use `parent-completed` when the authorized acceptance criteria are met after
+parent recovery. This is an explicit assurance result, not a silent downgrade
+or reviewer `ship`. Do not reset the counter or rename the same unchanged batch
+to evade the cap. Continue all safe reversible work, but never invent authority
+to deploy, merge, release, move real money, execute a destructive migration, or
+perform another protected external action. Leave such an action unexecuted and
+report `blocked-external-boundary` only for that boundary.
 
 ## Runtime evidence language
 
@@ -172,11 +256,29 @@ When a worker gate fails:
    explicit team mode, pause and make at most one corrected re-dispatch when
    the expected runtime is available; otherwise request user direction.
 
-When the reviewer gate fails, reject the verdict and do not claim strict
-acceptance. Spawn a fresh reviewer only after the expected runtime is available
-and capacity permits it.
+When the reviewer gate fails, reject the verdict and do not claim final-strict
+acceptance. The attempt still consumes one review call when the child began
+execution. Spawn a fresh reviewer only when the expected runtime is available,
+capacity permits it, and call 2 has not already been consumed.
 
 Do not hard-code an expected model for optional platform specialists such as
 `code_mapper`, `tester`, `reviewer`, or `security_reviewer`; Solweaver does not
 own those definitions. Report their runtime evidence honestly and enforce an
 exact pair only when the user explicitly requires one.
+
+## Final-strict protected boundaries
+
+Final-strict defers only the independent reviewer, never parent verification.
+Do not cross any of these boundaries before the fresh final-strict gate accepts
+the relevant cumulative change:
+
+- executing a destructive or irreversible migration;
+- moving real money or changing production financial state;
+- changing production authentication or authorization behavior;
+- deploying, merging, releasing, or performing another irreversible external
+  mutation.
+
+If a protected boundary arrives before the declared batch end, move the final
+gate forward for the accumulated relevant change or stop. The user may redefine
+the remaining batch after that gate; do not silently continue under a stale
+ledger.

@@ -43,8 +43,8 @@ enough, and routes bounded work only when delegation adds value.
 - **Verification built in:** worker summaries are not treated as proof; Sol
   reviews the changes and runs appropriate checks.
 - **Adaptive assurance:** ordinary work stays lightweight; auth, money,
-  migrations, public APIs, production paths, and wide refactors receive a
-  fresh read-only Sol review.
+  migrations, public APIs, production paths, and wide refactors use one
+  final-strict review at the declared final or protected boundary.
 - **Runtime honesty:** configured model routing is kept distinct from model and
   effort actually exposed by runtime metadata.
 - **No surprise publishing:** deployment, production mutation, commits, pushes,
@@ -144,10 +144,10 @@ and reports the evidence.
 
 | Mode | Implementation | Independent review |
 | --- | --- | --- |
-| `auto` (default) | Sol decides between working solo and using the smallest useful team | Added when strict assurance applies |
+| `auto` (default) | Sol decides between working solo and using the smallest useful team | One final review when final-strict assurance applies |
 | `solo` | Sol plans, implements, and verifies alone; no subagents are spawned | None; standard assurance only |
-| `solo-reviewed` | Sol implements and verifies alone; no implementation workers are spawned | One fresh read-only Sol reviewer per verified review round |
-| `team` | At least one bounded Terra or Luna worker implements under Sol ownership | Added when strict assurance applies |
+| `solo-reviewed` | Sol implements and verifies alone; no implementation workers are spawned | Always one final-strict gate, plus a fresh re-review after fixes |
+| `team` | At least one bounded Terra or Luna worker implements under Sol ownership | One final review when final-strict assurance applies |
 
 Invoking Solweaver without a mode uses `auto`; it does not automatically spawn
 Terra or Luna.
@@ -172,10 +172,10 @@ Use solo-reviewed mode.
 Goal: update the authorization boundary and verify the affected behavior.
 ```
 
-`solo-reviewed` uses strict acceptance. Plain `solo` cannot claim strict
-completion because a parent self-review is not independent. If a solo request
-also triggers strict risk, Sol asks whether to continue without strict
-acceptance or switch to `solo-reviewed`.
+`solo-reviewed` always uses final-strict acceptance. Plain `solo` cannot claim
+independent completion because a parent self-review is not independent. If a
+solo request triggers final-strict risk, Sol asks whether to continue with
+standard assurance or switch to `solo-reviewed`.
 
 ### Standard mode
 
@@ -190,25 +190,56 @@ Goal: add profile editing with validation and regression tests.
 In the default `auto` execution mode, Sol decides whether delegation adds value,
 then inspects and verifies the complete result.
 
-### Strict mode
+### Final-strict mode
 
-Request strict mode explicitly when you want a fresh read-only Sol review:
+Use final-strict when you want Sol to finish and verify one coherent phase or
+batch before paying for a fresh independent Sol review:
 
 ```text
 $solweaver
 
-Use strict mode.
+Use team mode with final-strict assurance.
 
-Goal: implement payment webhook verification and replay protection.
+Complete this coherent phase with parent verification after every checkpoint.
+Run one fresh final-strict review over the complete integrated batch at the
+declared final boundary.
 ```
 
-Solweaver also selects strict mode automatically for auth, authorization,
+Sol records the exact base state, cumulative acceptance criteria, checkpoint
+evidence, known gaps, and the final boundary. Intermediate results are only
+`checkpoint-ready`: no final reviewer is spawned and no `ship` claim is made.
+At the final boundary, Sol re-inspects the complete cumulative diff from the
+recorded base, reruns integration or acceptance checks, and sends the whole
+batch to one fresh runtime-verified reviewer.
+
+Final-strict cannot defer review across destructive migration execution, real
+money movement, production auth or authorization changes, deployment, merge,
+release, or another irreversible external mutation. If that boundary arrives
+early, the accumulated relevant change must pass its final gate first. A batch
+that becomes too broad for one complete review must be split rather than
+partially omitted from the reviewer packet.
+
+Final-strict is Solweaver's only independent-review assurance mode. It is
+selected automatically for `solo-reviewed` and for auth, authorization,
 secrets, tenant isolation, money, data integrity, migrations, destructive
 behavior, concurrency, public APIs, production-critical paths, and wide
-architectural refactors. Strict completion requires a reviewer verdict of
-`ship`; `fix-first` returns findings to the responsible worker, while `rethink`
-returns the architecture to Sol. Strict assurance is compatible with `auto`,
-`solo-reviewed`, and `team`, but not plain `solo`.
+architectural refactors in `auto` or `team`. It is not compatible with plain
+`solo`.
+
+Final-strict may defer the independent review during reversible implementation,
+but it still requires a fresh reviewer and `ship` verdict before its final or
+protected boundary. A `fix-first` verdict returns findings to the responsible
+worker, while `rethink` returns the architecture to Sol.
+
+Each final-strict batch has a hard budget of two reviewer calls. Every reviewer
+spawn that begins execution counts, including a runtime mismatch or unusable
+verdict. If call 2 does not return a valid `ship`, Sol sets
+`REVIEW_STATUS: review-exhausted` and never starts call 3 for the same batch.
+Parent Sol then owns completion: it reconciles findings, makes conservative
+in-scope decisions, applies addressable fixes, and verifies the complete result
+without asking the user merely because the review budget ended. A completed
+result is reported as `FINAL_STATUS: parent-completed` and
+`ASSURANCE_STATUS: final-strict-not-achieved`, not reviewer `ship`.
 
 ### Steer worker selection
 
@@ -257,7 +288,8 @@ Sol should finish with:
 
 - the usable outcome and changed-file scope;
 - verification commands actually run and their concrete results;
-- the execution mode, assurance mode, and strict-review verdict when applicable;
+- the execution mode, assurance mode, final-strict base and boundary when
+  applicable, and reviewer verdict;
 - remaining gaps, risks, or behavior that was not proved; and
 - external actions such as commit, push, pull request, merge, or deployment
   still waiting for explicit authorization.
@@ -288,7 +320,7 @@ flowchart LR
 | Orchestrator and solo implementer | `gpt-5.6-sol` / `max` | Planning, solo implementation, decomposition, ownership, integration, review, and delivery |
 | Default worker | `gpt-5.6-terra` / `max` | Coupled, ambiguous, multi-file, architecture-sensitive, backend, frontend, database, integration, debugging, and refactoring work |
 | Bounded worker | `gpt-5.6-luna` / `max` | Narrow, mechanical, repetitive, documentation-adjacent, high-throughput, or independent file clusters |
-| Strict reviewer | `gpt-5.6-sol` / `max`, read-only | Fresh-context review for high-risk or wide changes; returns `ship`, `fix-first`, or `rethink` |
+| Final-strict reviewer | `gpt-5.6-sol` / `max`, read-only | One fresh-context review at a declared final or protected boundary; returns `ship`, `fix-first`, or `rethink` |
 
 Sol owns orchestration throughout. Workers receive a concrete goal, explicit
 file or module ownership, acceptance criteria, validation commands, and an
@@ -314,7 +346,7 @@ correctly routed and its report is not evidence. Because native workers share
 the worktree, Sol preserves their edits, inspects the complete diff, and
 verifies any changes it takes over; it never rolls them back automatically.
 Missing or mismatched reviewer metadata rejects the verdict and cannot satisfy
-strict acceptance.
+final-strict acceptance.
 
 The gate intentionally checks only those two runtime fields. Agent self-reports,
 task labels, and UI names are not proof, and sandbox enforcement is not inferred
@@ -326,17 +358,17 @@ hard-coded to a model because Solweaver does not own their definitions.
 | Mode | Use it for | Acceptance |
 | --- | --- | --- |
 | Standard | Ordinary work in `auto`, `solo`, or `team` execution | Parent inspects the complete diff and reruns proportionate checks |
-| Strict | `solo-reviewed`, or auth, authorization, secrets, tenant isolation, money, data integrity, migrations, destructive behavior, concurrency, public APIs, production-critical paths, and wide refactors in `auto` or `team` | Standard verification plus a fresh read-only `solweaver_reviewer` verdict |
+| Final-strict | One coherent phase or batch where intermediate work remains reversible | Parent verification at every checkpoint, then at most two fresh review calls; only a valid `ship` passes |
 
-Strict review is intentionally fresh-context and read-only. The reviewer never
-implements its findings. Any `fix-first` result returns to the responsible
-worker, or to Sol in `solo-reviewed`, and requires parent verification plus
-another fresh review. Sol records a closure matrix for every prior finding.
-After two consecutive `fix-first` verdicts, Sol pauses before a third review to
-separate implementation defects, evidence gaps, unresolved product or
-architecture decisions, and acceptance-versus-review expectation mismatches.
-It requests user direction for consequential ambiguity instead of looping,
-switching workflows, or lowering the review bar automatically.
+Final-strict review is intentionally fresh-context and read-only. The reviewer
+never implements its findings. A first-call `fix-first` result returns to the
+responsible worker, or to Sol in `solo-reviewed`, and requires parent
+verification plus a closure matrix before the second and final review. A
+non-`ship` second call triggers `review-exhausted`. Sol separates implementation
+defects, evidence gaps, unresolved product or architecture decisions, and
+acceptance-versus-review expectation mismatches, then owns the fixes and final
+verification instead of looping, requesting user direction, switching
+workflows, or lowering the review bar.
 
 ## What's included
 
@@ -347,7 +379,7 @@ switching workflows, or lowering the review bar automatically.
 | [`skills/solweaver/scripts/validate_install.py`](./skills/solweaver/scripts/validate_install.py) | Installed skill, agent, configuration, and routing validator |
 | [`agents/terra-worker.toml`](./agents/terra-worker.toml) | Terra worker definition at `max` |
 | [`agents/luna-worker.toml`](./agents/luna-worker.toml) | Luna worker definition at `max` |
-| [`agents/solweaver-reviewer.toml`](./agents/solweaver-reviewer.toml) | Fresh read-only Sol reviewer for strict mode |
+| [`agents/solweaver-reviewer.toml`](./agents/solweaver-reviewer.toml) | Fresh read-only Sol reviewer for final-strict gates |
 | [`examples/config.toml`](./examples/config.toml) | Parent runtime and concurrency example |
 | [`examples/AGENTS.md`](./examples/AGENTS.md) | Minimal global routing policy |
 | [`scripts/install.py`](./scripts/install.py) | Dependency-free installer with backup-on-upgrade support |
@@ -364,9 +396,16 @@ switching workflows, or lowering the review bar automatically.
 - A configured model is not described as observed runtime unless runtime or
   session metadata exposes it. Package-owned child results are accepted only
   after their model and effort pass the runtime identity gate.
+- Final-strict defers only the independent reviewer. Parent verification still
+  runs at every checkpoint, intermediate work cannot claim `ship`, and protected
+  irreversible or production boundaries require the final gate first.
+- The final-strict review budget is two calls per batch. A non-`ship` second
+  call hard-stops review and cannot be bypassed by resetting the same batch.
+  Parent Sol continues with transparent `parent-completed` recovery; protected
+  external actions remain unexecuted without their required authority.
 - High-risk auth, money, tenant-isolation, data-integrity, concurrency, and
-  production paths stay under parent control and require fresh strict review;
-  plain `solo` cannot claim strict acceptance.
+  production paths stay under parent control and require final-strict review;
+  plain `solo` cannot claim final-strict acceptance.
 - The skill does not authorize deployment, production mutation, pushing,
   merging, or pull-request creation.
 

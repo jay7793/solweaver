@@ -1,5 +1,5 @@
 name = "solweaver_reviewer"
-description = "Fresh read-only GPT-5.6 Sol reviewer for strict-risk Solweaver acceptance."
+description = "Fresh read-only GPT-5.6 Sol reviewer for final-strict Solweaver acceptance."
 model = "gpt-5.6-sol"
 model_reasoning_effort = "max"
 sandbox_mode = "read-only"

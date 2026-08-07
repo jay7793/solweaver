@@ -49,6 +49,12 @@ def validate_agent(
             f"{path}: sandbox_mode must be {sandbox_mode}",
             errors,
         )
+    if expected_name == "solweaver_reviewer":
+        require(
+            "final-strict" in agent,
+            f"{path}: reviewer must be scoped to final-strict acceptance",
+            errors,
+        )
     require("English" in agent, f"{path}: communication must default to English", errors)
 
 
@@ -96,13 +102,30 @@ def main() -> int:
         "self-report",
         "never roll",
         "back child edits automatically",
-        "child runtime checks",
+        "re-review rounds, child",
+        "runtime checks and any mismatched",
         "`fix-first` closure matrix",
-        "After two consecutive `fix-first` verdicts",
         "design/acceptance reconciliation",
         "re-review rounds",
+        "checkpoint-ready",
+        "complete cumulative diff from the",
+        "protected irreversible or production",
+        "Never describe an intermediate final-strict checkpoint",
+        "Final-strict is the only independent-review assurance mode",
+        "`MAX_REVIEW_CALLS = 2`",
+        "third reviewer for the same batch",
+        "`REVIEW_STATUS: review-exhausted`",
+        "Do not spawn call 3",
+        "`FINAL_STATUS: parent-completed`",
+        "`ASSURANCE_STATUS: final-strict-not-achieved`",
+        "Do not ask the user merely to",
     ):
         require(term in skill, f"SKILL.md: missing contract text: {term}", errors)
+    require(
+        "Use **strict mode**" not in skill,
+        "SKILL.md: legacy strict mode must be removed",
+        errors,
+    )
 
     ui = read_text(skill_dir / "agents" / "openai.yaml", errors)
     require('display_name: "Solweaver"' in ui, "openai.yaml: wrong display name", errors)
@@ -117,10 +140,29 @@ def main() -> int:
         "do not infer sandbox",
         "Do not revert or delete child edits",
         "`fix-first` closure matrix",
-        "Design/acceptance reconciliation",
-        "After two consecutive `fix-first` verdicts",
+        "Review-budget exhaustion and parent completion",
+        "Final-strict batch ledger",
+        "checkpoint-ready",
+        "Complete cumulative diff from base",
+        "Final-strict protected boundaries",
+        "NEXT_REVIEW_ALLOWED: no",
+        "same unchanged batch",
+        "USER_DECISION_REQUIRED: no",
+        "FINAL_STATUS: parent-completed | blocked-external-boundary",
+        "ASSURANCE_STATUS: final-strict-not-achieved",
     ):
         require(term in contracts, f"contracts: missing {term}", errors)
+    require(
+        contracts.count("MAX_REVIEW_CALLS: 2") == 3,
+        "contracts: ledger, review packet, and exhaustion report must pin two calls",
+        errors,
+    )
+    require(
+        "<standard | final-strict | strict>" not in contracts
+        and "<final-strict | strict>" not in contracts,
+        "contracts: legacy strict assurance must be removed",
+        errors,
+    )
 
     runtime_smoke = read_text(
         skill_dir / "references" / "runtime-smoke-test.md",
@@ -134,7 +176,17 @@ def main() -> int:
         'effort == "max"',
         "model-generated self-report",
         "focused routing smoke is not full implementation end-to-end proof",
-        "pauses for design/acceptance reconciliation after two",
+        "final-strict mode",
+        "checkpoint-ready",
+        "complete cumulative",
+        "diff from the recorded base",
+        "protected irreversible",
+        "two-call hard gate",
+        "never spawns call 3",
+        "REVIEW_STATUS: review-exhausted",
+        "FINAL_STATUS: parent-completed",
+        "ASSURANCE_STATUS: final-strict-not-achieved",
+        "without requesting user direction",
     ):
         require(term in runtime_smoke, f"runtime smoke test: missing {term}", errors)
 

@@ -4,8 +4,9 @@ description: >-
   Run Sol-led software development in auto, solo, solo-reviewed, or team modes,
   with GPT-5.6 Sol owning planning, implementation or delegation, integration,
   verification, and delivery; terra_worker and luna_worker providing bounded
-  implementation; and solweaver_reviewer providing fresh strict review. Use
-  for software-development prompts beginning with Goal: or /goal, or when the
+  implementation; and solweaver_reviewer providing one fresh final-strict
+  review at a declared batch boundary. Use for software-development prompts
+  beginning with Goal: or /goal, or when the
   user requests Sol-only work, a software team, agents, subagents, parallel
   work, or delegated implementation. Do not use for general questions,
   research, writing, or operations-only requests.
@@ -66,30 +67,54 @@ improves speed, context isolation, or review quality.
   standard assurance only.
 - Use **solo-reviewed mode** when the user wants Sol to implement alone with an
   independent final gate. Do not spawn implementation workers; after parent
-  verification, spawn one fresh `solweaver_reviewer` at a time and apply strict
-  acceptance, including a fresh review after any fix round.
+  verification at the final-strict boundary, spawn one fresh
+  `solweaver_reviewer` at a time and apply final-strict acceptance, including a
+  fresh review after a fix round only while review budget remains.
+  Solo-reviewed always uses final-strict assurance.
 - Use **team mode** when the user explicitly requests delegation. Spawn at
   least one bounded implementation worker, while Sol retains integration and
-  verification. Add the fresh reviewer when strict assurance applies.
+  verification. Add the fresh reviewer only when a final-strict batch reaches
+  its gate.
 - Honor an explicit mode without silently changing it. If solo mode conflicts
-  with a user-requested or risk-triggered strict review, stop before
-  implementation and ask the user to choose solo without strict acceptance or
-  solo-reviewed.
+  with a user-requested or risk-triggered independent review, stop before
+  implementation and ask the user to choose solo with standard assurance,
+  solo-reviewed, or auto/team execution with final-strict assurance.
 
 ## Choose assurance
 
 - Use **standard mode** for ordinary work in auto, solo, or team execution. Sol
   inspects the diff, reruns verification, and accepts or returns the work.
-- Use **strict mode** when the user requests it or the change affects auth,
+- Use **final-strict mode** when the user wants one independent review over a
+  coherent completed phase or batch, or when the change affects auth,
   authorization, secrets, tenant isolation, money, data integrity, migrations,
   destructive behavior, concurrency, public APIs, production-critical paths,
-  or a wide architectural refactor.
-- Apply strict mode to auto or team execution, and always apply it to
-  solo-reviewed execution. Require a fresh `solweaver_reviewer` verdict after
-  parent verification. If the reviewer is unavailable, do not claim strict
-  completion.
-- Never describe solo execution or a parent self-review as independent strict
-  review.
+  or a wide architectural refactor. Record the exact base state, batch
+  objective, acceptance criteria, final boundary, and cumulative evidence.
+  Apply standard parent verification after every intermediate checkpoint, do
+  not spawn `solweaver_reviewer` yet, and report only `checkpoint-ready`.
+- At the declared final boundary, inspect the complete cumulative diff from the
+  recorded base, rerun proportionate integration and acceptance checks, then
+  apply the fresh reviewer gate and final-strict acceptance rules.
+  Final-strict is compatible with auto, team, or solo-reviewed execution, but
+  not plain solo because its final review is independent.
+- Final-strict is the only independent-review assurance mode. Auto and team use
+  standard assurance unless final-strict is requested or risk-triggered;
+  solo-reviewed always uses final-strict.
+- Set `MAX_REVIEW_CALLS = 2` for each final-strict batch. Count every
+  `solweaver_reviewer` spawn that begins execution, including attempts with
+  missing or mismatched runtime metadata or an unusable verdict. Never spawn a
+  third reviewer for the same batch.
+- Permit final-strict execution during high-risk implementation only
+  while it remains reversible and no protected boundary is crossed. Before a
+  destructive migration, real money movement, production auth or authorization
+  change, deploy, merge, release, or other irreversible external mutation,
+  complete the final-strict gate for the relevant cumulative change or stop.
+- If a final-strict batch becomes too broad or incoherent for one complete
+  review, pause and ask the user to split it into reviewable batches. Never
+  omit parts of the diff merely to preserve a one-review target.
+- Never describe solo execution or a parent self-review as independent review.
+  Never describe an intermediate final-strict checkpoint as `ship` or
+  final-strict acceptance.
 
 ## Plan and decompose
 
@@ -99,7 +124,7 @@ improves speed, context isolation, or review quality.
 3. Split only bounded work. Parallelize only assignments that are independent
    and have disjoint write ownership.
 4. Read [references/contracts.md](references/contracts.md) before the first
-   delegated write or strict review in a task.
+   delegated write or final-strict review in a task.
 5. Send every worker the complete task packet from that reference. Use
    `fork_turns="none"` when selecting a custom worker so the packet, not leaked
    parent context, defines the assignment.
@@ -116,7 +141,7 @@ Apply the selected execution mode before routing:
 
 - In solo mode, do not spawn any agent.
 - In solo-reviewed mode, spawn no implementation worker and reserve reviewer
-  spawns for the final strict gate and any required re-review.
+  spawns for the final-strict gate and any required re-review.
 - In team mode, spawn at least one bounded implementation worker.
 - In auto mode, spawn only agents that materially improve the outcome.
 
@@ -129,8 +154,8 @@ Apply the selected execution mode before routing:
   independent file clusters.
 - Use `solweaver_reviewer` only as a fresh, read-only reviewer. It never
   implements its own findings.
-- Prefer Terra and strict mode when incorrect routing could affect a high-risk
-  boundary.
+- Prefer Terra and final-strict assurance when incorrect routing could affect a
+  high-risk boundary.
 - Use `code_mapper`, `tester`, `reviewer`, or `security_reviewer` only when the
   current runtime exposes them and their specialization materially helps.
 - Use another implementation agent only when the user explicitly requests it.
@@ -179,40 +204,62 @@ to the parent.
    production evidence; one level does not prove another.
 4. Compare the evidence with the original acceptance criteria and note anything
    not run or not proved.
-5. In strict mode, including solo-reviewed execution, spawn a fresh
-   `solweaver_reviewer` with
-   `fork_turns="none"` after parent verification. Send the strict review packet
-   and require exactly `ship`, `fix-first`, or `rethink`.
-6. Before accepting the verdict, inspect the reviewer child session
+5. In final-strict mode at each intermediate checkpoint, update the referenced
+   batch ledger with changed scope, verification, decisions, and known gaps.
+   Do not spawn the final-strict reviewer and do not claim more than
+   `checkpoint-ready`.
+6. At the final-strict boundary, re-establish the recorded base, inspect the
+   complete cumulative diff, reconcile every checkpoint with the batch
+   acceptance criteria, and rerun final integration or acceptance evidence.
+7. If final-strict work approaches a protected irreversible or production
+   boundary before the declared end, treat that boundary as the final gate for
+   the relevant accumulated change. Do not cross it with deferred review.
+8. At a final-strict boundary, including solo-reviewed execution, verify that
+   review budget remains, set `THIS_CALL` to the next call number, then spawn a
+   fresh `solweaver_reviewer` with
+   `fork_turns="none"` after parent verification. Send the final-strict review
+   packet with the call number and require exactly `ship`, `fix-first`, or
+   `rethink`. Increment `REVIEW_CALLS_USED` as soon as the child begins
+   execution; a spawn that never starts does not consume a call.
+9. Before accepting the verdict, inspect the reviewer child session
    `turn_context`. Accept it only when `model == "gpt-5.6-sol"` and
    `effort == "max"`. Reject missing or mismatched metadata and do not count
-   the verdict as strict-review evidence. Never use a model-generated
-   self-report as runtime proof.
-7. On `fix-first`, close the reviewer, return concrete findings to the
+   the verdict as final-strict-review evidence. Never use a model-generated
+   self-report as runtime proof. The failed attempt still consumes one review
+   call because it began execution.
+10. On `fix-first`, close the reviewer, return concrete findings to the
    responsible worker, or fix them in the parent for solo-reviewed execution.
    Verify again and complete the referenced `fix-first` closure matrix before
-   spawning another fresh reviewer. The new reviewer still inspects the full
-   diff independently and may reject a claimed closure or raise new findings.
-   On `rethink`, revise the architecture before more implementation.
-8. After two consecutive `fix-first` verdicts, pause before a third review and
-   perform the referenced design/acceptance reconciliation. Classify each
-   remaining issue as an implementation defect, evidence defect, unresolved
-   product or architecture decision, or acceptance-versus-review expectation
-   mismatch. Request user direction when the issue is consequential or
-   ambiguous. Do not switch workflows or lower the review bar automatically.
-9. Only `ship` permits strict acceptance. If the reviewer is unavailable,
-   runtime metadata fails the gate, review evidence is incomplete, or the
-   surface cannot free capacity for a fresh re-review, report the gap and do
-   not claim strict completion.
-10. Stop completed subagent threads when the current surface supports it.
+   using the second and final call. The new reviewer still inspects the full
+   cumulative diff independently and may reject a claimed closure or raise new
+   findings. On `rethink`, reconcile the architecture before more
+   implementation and use the remaining call only after parent verification.
+11. When call 2 returns anything other than a valid `ship`, or its runtime gate
+   fails, set `REVIEW_STATUS: review-exhausted` and enter parent-owned
+   completion. Perform the referenced design/acceptance reconciliation, make
+   the narrowest conservative decisions consistent with the original goal and
+   repository contracts, implement every addressable fix, inspect the complete
+   diff, and rerun proportionate verification. Do not ask the user merely to
+   resolve review exhaustion. Do not spawn call 3, reset the counter, switch
+   workflows, lower the review bar, or claim final-strict completion.
+12. Only a valid `ship` within the two-call budget permits final-strict
+   acceptance. Without it, finish authorized reversible work as
+   `FINAL_STATUS: parent-completed` with
+   `ASSURANCE_STATUS: final-strict-not-achieved` when the acceptance criteria
+   are met. Never invent authority for deploy, merge, release, money movement,
+   destructive migration execution, or another protected external action;
+   leave that action unexecuted and report the boundary.
+13. Stop completed subagent threads when the current surface supports it.
 
 ## Deliver
 
 Lead with the usable outcome. Report changed files, verification actually run,
-the execution mode, assurance mode, reviewer verdict when applicable,
-reviewer call counts, re-review rounds, child runtime checks and any mismatched
-or unverified lanes, remaining risks or unsupported behavior, and any action
-still requiring user approval. Do not describe configured routing as observed
-runtime, or repository checks as live production evidence. Do not deploy,
-mutate production, commit, merge, push, or open a pull request unless the user
+the execution mode, assurance mode, final-strict base and boundary when
+applicable, reviewer verdict, reviewer call counts, re-review rounds, child
+runtime checks and any mismatched or unverified lanes, review budget and
+`review-exhausted`, `parent-completed`, and assurance status when applicable,
+remaining risks or unsupported behavior, and any protected external action
+left unexecuted. Do not describe configured routing as observed runtime, or
+repository checks as live production evidence. Do not deploy, mutate
+production, commit, merge, push, or open a pull request unless the user
 authorized that external action.

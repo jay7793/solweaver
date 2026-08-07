@@ -18,6 +18,12 @@ def require(condition: bool, message: str) -> None:
         raise AssertionError(message)
 
 
+def validate_python(path: Path) -> str:
+    text = path.read_text(encoding="utf-8")
+    compile(text, str(path), "exec")
+    return text
+
+
 def validate_skill() -> None:
     path = SKILL_DIR / "SKILL.md"
     text = path.read_text(encoding="utf-8")
@@ -61,6 +67,24 @@ def validate_skill() -> None:
         "Never describe solo execution" in text,
         "solo mode must not claim strict review",
     )
+    for term in (
+        "runtime-smoke-test.md",
+        "`turn_context`",
+        'model == "gpt-5.6-terra"',
+        'model == "gpt-5.6-luna"',
+        'model == "gpt-5.6-sol"',
+        'effort == "max"',
+        "model-generated",
+        "self-report",
+        "never roll",
+        "back child edits automatically",
+        "child runtime checks",
+        "`fix-first` closure matrix",
+        "After two consecutive `fix-first` verdicts",
+        "design/acceptance reconciliation",
+        "re-review rounds",
+    ):
+        require(term in text, f"SKILL.md missing runtime contract text: {term}")
 
     contracts = (SKILL_DIR / "references" / "contracts.md").read_text(
         encoding="utf-8"
@@ -76,6 +100,35 @@ def validate_skill() -> None:
         contracts.count("EXECUTION MODE") == 2,
         "worker and reviewer packets must define execution mode",
     )
+    for term in (
+        "Runtime identity gates",
+        "`terra_worker` | `gpt-5.6-terra` | `max`",
+        "`luna_worker` | `gpt-5.6-luna` | `max`",
+        "`solweaver_reviewer` | `gpt-5.6-sol` | `max`",
+        "do not infer sandbox",
+        "Do not revert or delete child edits",
+        "`fix-first` closure matrix",
+        "Design/acceptance reconciliation",
+        "After two consecutive `fix-first` verdicts",
+    ):
+        require(term in contracts, f"contracts missing runtime gate text: {term}")
+
+    runtime_smoke = (
+        SKILL_DIR / "references" / "runtime-smoke-test.md"
+    ).read_text(encoding="utf-8")
+    for term in (
+        "`turn_context`",
+        'model == "gpt-5.6-terra"',
+        'model == "gpt-5.6-luna"',
+        'model == "gpt-5.6-sol"',
+        'effort == "max"',
+        "model-generated self-report",
+        "focused routing smoke is not full implementation end-to-end proof",
+        "pauses for design/acceptance reconciliation after two",
+    ):
+        require(term in runtime_smoke, f"runtime smoke test missing: {term}")
+
+    validate_python(SKILL_DIR / "scripts" / "validate_install.py")
 
     ui = (SKILL_DIR / "agents" / "openai.yaml").read_text(encoding="utf-8")
     require(
@@ -144,6 +197,33 @@ def validate_examples() -> None:
     require("solo-reviewed" in policy, "AGENTS example must define solo-reviewed")
 
 
+def validate_package() -> None:
+    installer = validate_python(ROOT / "scripts" / "install.py")
+    for term in (
+        '"--upgrade"',
+        'codex_home / "backups"',
+        "Refusing to overwrite existing paths",
+        "Reusing identical agent definition",
+    ):
+        require(term in installer, f"installer missing upgrade contract: {term}")
+
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    for term in (
+        "Runtime identity gates",
+        "python3 scripts/install.py --upgrade",
+        "scripts/validate_install.py",
+        "never rolls them back automatically",
+        "After two consecutive `fix-first` verdicts",
+    ):
+        require(term in readme, f"README missing runtime or upgrade guidance: {term}")
+
+    workflow = (ROOT / ".github" / "workflows" / "validate.yml").read_text(
+        encoding="utf-8"
+    )
+    for term in ("validate_install.py", "--upgrade"):
+        require(term in workflow, f"CI workflow missing: {term}")
+
+
 def main() -> int:
     validate_skill()
     validate_agent("terra-worker.toml", "terra_worker", "gpt-5.6-terra")
@@ -155,9 +235,11 @@ def main() -> int:
         sandbox_mode="read-only",
     )
     validate_examples()
+    validate_package()
     print(
         "Validation passed: auto/solo/solo-reviewed/team execution, "
-        "Terra/Luna workers, strict Sol reviewer, and concurrency 2."
+        "runtime-gated Terra/Luna workers, strict Sol reviewer, safe upgrades, "
+        "and concurrency 2."
     )
     return 0
 

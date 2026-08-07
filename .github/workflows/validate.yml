@@ -21,3 +21,23 @@ jobs:
 
       - name: Validate skill package
         run: python3 scripts/validate.py
+
+      - name: Test isolated installation
+        run: |
+          codex_home="$(mktemp -d)"
+          python3 scripts/install.py --codex-home "$codex_home"
+          python3 "$codex_home/skills/solweaver/scripts/validate_install.py" \
+            --codex-home "$codex_home"
+
+      - name: Test backup-on-upgrade installation
+        run: |
+          codex_home="$(mktemp -d)"
+          python3 scripts/install.py --codex-home "$codex_home"
+          if python3 scripts/install.py --codex-home "$codex_home"; then
+            echo "installer unexpectedly overwrote an existing skill"
+            exit 1
+          fi
+          python3 scripts/install.py --codex-home "$codex_home" --upgrade
+          test -d "$codex_home/backups"
+          python3 "$codex_home/skills/solweaver/scripts/validate_install.py" \
+            --codex-home "$codex_home"

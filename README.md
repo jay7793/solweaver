@@ -94,7 +94,17 @@ python3 scripts/install.py
 ```
 
 The installer copies the skill and agent definitions into `$CODEX_HOME`, or
-`~/.codex` when `CODEX_HOME` is unset. It refuses to overwrite existing files.
+`~/.codex` when `CODEX_HOME` is unset. It refuses to replace an existing skill
+or non-identical agent file unless `--upgrade` is supplied. Upgrade mode creates
+timestamped backups before replacing them and reuses identical shared agent
+definitions.
+
+Upgrade an existing installation with:
+
+```bash
+git pull
+python3 scripts/install.py --upgrade
+```
 
 ### 2. Configure
 
@@ -288,6 +298,29 @@ needs it. Code and repository content continue to follow the task and local
 conventions. Terra and Luna may run in parallel only when their write scopes
 are disjoint.
 
+### Runtime identity gates
+
+After every package-owned child turn, Solweaver inspects
+`turn_context.model` and `turn_context.effort`:
+
+| Agent | Required runtime |
+| --- | --- |
+| `terra_worker` | `gpt-5.6-terra` / `max` |
+| `luna_worker` | `gpt-5.6-luna` / `max` |
+| `solweaver_reviewer` | `gpt-5.6-sol` / `max` |
+
+Missing or mismatched worker metadata means the lane is not counted as
+correctly routed and its report is not evidence. Because native workers share
+the worktree, Sol preserves their edits, inspects the complete diff, and
+verifies any changes it takes over; it never rolls them back automatically.
+Missing or mismatched reviewer metadata rejects the verdict and cannot satisfy
+strict acceptance.
+
+The gate intentionally checks only those two runtime fields. Agent self-reports,
+task labels, and UI names are not proof, and sandbox enforcement is not inferred
+from this gate. Optional platform specialists are reported honestly but are not
+hard-coded to a model because Solweaver does not own their definitions.
+
 ### Assurance modes
 
 | Mode | Use it for | Acceptance |
@@ -298,19 +331,26 @@ are disjoint.
 Strict review is intentionally fresh-context and read-only. The reviewer never
 implements its findings. Any `fix-first` result returns to the responsible
 worker, or to Sol in `solo-reviewed`, and requires parent verification plus
-another fresh review.
+another fresh review. Sol records a closure matrix for every prior finding.
+After two consecutive `fix-first` verdicts, Sol pauses before a third review to
+separate implementation defects, evidence gaps, unresolved product or
+architecture decisions, and acceptance-versus-review expectation mismatches.
+It requests user direction for consequential ambiguity instead of looping,
+switching workflows, or lowering the review bar automatically.
 
 ## What's included
 
 | Path | Purpose |
 | --- | --- |
 | [`skills/solweaver/`](./skills/solweaver/) | Codex skill and UI metadata |
+| [`skills/solweaver/references/runtime-smoke-test.md`](./skills/solweaver/references/runtime-smoke-test.md) | Restarted-task runtime certification procedure |
+| [`skills/solweaver/scripts/validate_install.py`](./skills/solweaver/scripts/validate_install.py) | Installed skill, agent, configuration, and routing validator |
 | [`agents/terra-worker.toml`](./agents/terra-worker.toml) | Terra worker definition at `max` |
 | [`agents/luna-worker.toml`](./agents/luna-worker.toml) | Luna worker definition at `max` |
 | [`agents/solweaver-reviewer.toml`](./agents/solweaver-reviewer.toml) | Fresh read-only Sol reviewer for strict mode |
 | [`examples/config.toml`](./examples/config.toml) | Parent runtime and concurrency example |
 | [`examples/AGENTS.md`](./examples/AGENTS.md) | Minimal global routing policy |
-| [`scripts/install.py`](./scripts/install.py) | Dependency-free, no-overwrite installer |
+| [`scripts/install.py`](./scripts/install.py) | Dependency-free installer with backup-on-upgrade support |
 | [`scripts/validate.py`](./scripts/validate.py) | Standard-library repository validator used by CI |
 
 ## Safety model
@@ -322,7 +362,8 @@ another fresh review.
 - Native subagents are assumed to share the active worktree unless the host
   explicitly reports isolation.
 - A configured model is not described as observed runtime unless runtime or
-  spawn metadata exposes it.
+  session metadata exposes it. Package-owned child results are accepted only
+  after their model and effort pass the runtime identity gate.
 - High-risk auth, money, tenant-isolation, data-integrity, concurrency, and
   production paths stay under parent control and require fresh strict review;
   plain `solo` cannot claim strict acceptance.
@@ -338,8 +379,17 @@ python3 scripts/validate.py
 ```
 
 It validates skill frontmatter, folder and name consistency, UI metadata,
-worker TOML definitions, model assignments, reasoning effort, and the example
-configuration.
+worker TOML definitions, model assignments, reasoning effort, runtime-gate
+contracts, the smoke test, installer behavior, and the example configuration.
+
+Validate an installed copy with:
+
+```bash
+python3 ~/.codex/skills/solweaver/scripts/validate_install.py
+```
+
+Restart Codex or open a new task and follow the bundled runtime smoke test
+before describing the workflow as runtime-certified.
 
 ## Contributing
 

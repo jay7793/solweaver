@@ -28,16 +28,33 @@ improves speed, context isolation, or review quality.
 4. When the selected mode permits agents, inspect available agent types before
    routing. Do not silently substitute a missing worker or reviewer.
 5. Describe model evidence precisely:
-   - **Observed**: public runtime or spawn metadata reports role, model, or
-     effort.
+   - **Observed**: current session `turn_context` reports model and effort.
    - **Configured**: a validated agent definition pins the value, but runtime
      metadata does not expose it.
    - **Unverified**: neither source establishes the value.
-6. If observed routing contradicts configuration, stop accepting that lane and
-   report the mismatch. Never use a task label or worker self-report as runtime
-   proof.
-7. Preserve user changes, repository boundaries, and explicit external-action
+6. If the observed parent is not Sol Max, stop before implementation and direct
+   the user to select `gpt-5.6-sol` with `max` reasoning. If the parent is
+   unverified, do not claim it is Sol Max.
+7. Enforce the package-owned child identity matrix: `terra_worker` requires
+   `model == "gpt-5.6-terra"` and `effort == "max"`; `luna_worker` requires
+   `model == "gpt-5.6-luna"` and `effort == "max"`; and
+   `solweaver_reviewer` requires `model == "gpt-5.6-sol"` and
+   `effort == "max"`.
+8. After every package-owned child turn, inspect the child session
+   `turn_context` before accepting its report or verdict. If either value
+   differs or metadata is unavailable, mark the lane mismatched or unverified
+   and apply the handling in
+   [references/contracts.md](references/contracts.md). A model-generated
+   self-report, task label, or UI name is not runtime proof.
+9. Do not impose a fixed model gate on optional platform specialists that this
+   package does not define. Report their runtime as observed, configured, or
+   unverified, and honor any explicit runtime requirement from the user.
+10. Preserve user changes, repository boundaries, and explicit external-action
    approval requirements.
+11. After installing or changing Solweaver definitions, run
+    `scripts/validate_install.py`, restart Codex or open a new task, and follow
+    [references/runtime-smoke-test.md](references/runtime-smoke-test.md) before
+    describing the workflow as runtime-certified.
 
 ## Choose execution mode
 
@@ -141,6 +158,15 @@ to the parent.
    correction loop.
 6. Resolve overlaps and conflicts centrally. Never ask workers to orchestrate
    the team.
+7. If a Terra or Luna runtime gate fails, do not accept the worker report as
+   evidence or count that lane as correctly routed. Inspect the shared
+   worktree and complete diff, preserve all unrelated changes, and never roll
+   back child edits automatically.
+8. In auto mode, Sol may take ownership of inspected changes and verify them
+   locally, but must report the failed worker lane. In explicit team mode,
+   pause before further implementation and either make one corrected
+   re-dispatch when the expected runtime is available or request user
+   direction. Never downgrade an explicit team request silently.
 
 ## Integrate and verify
 
@@ -157,18 +183,36 @@ to the parent.
    `solweaver_reviewer` with
    `fork_turns="none"` after parent verification. Send the strict review packet
    and require exactly `ship`, `fix-first`, or `rethink`.
-6. On `fix-first`, return concrete findings to the responsible worker, or fix
-   them in the parent for solo-reviewed execution. Verify again and obtain a
-   new fresh review. On `rethink`, revise the architecture before more
-   implementation. Only `ship` permits strict acceptance.
-7. Stop completed subagent threads when the current surface supports it.
+6. Before accepting the verdict, inspect the reviewer child session
+   `turn_context`. Accept it only when `model == "gpt-5.6-sol"` and
+   `effort == "max"`. Reject missing or mismatched metadata and do not count
+   the verdict as strict-review evidence. Never use a model-generated
+   self-report as runtime proof.
+7. On `fix-first`, close the reviewer, return concrete findings to the
+   responsible worker, or fix them in the parent for solo-reviewed execution.
+   Verify again and complete the referenced `fix-first` closure matrix before
+   spawning another fresh reviewer. The new reviewer still inspects the full
+   diff independently and may reject a claimed closure or raise new findings.
+   On `rethink`, revise the architecture before more implementation.
+8. After two consecutive `fix-first` verdicts, pause before a third review and
+   perform the referenced design/acceptance reconciliation. Classify each
+   remaining issue as an implementation defect, evidence defect, unresolved
+   product or architecture decision, or acceptance-versus-review expectation
+   mismatch. Request user direction when the issue is consequential or
+   ambiguous. Do not switch workflows or lower the review bar automatically.
+9. Only `ship` permits strict acceptance. If the reviewer is unavailable,
+   runtime metadata fails the gate, review evidence is incomplete, or the
+   surface cannot free capacity for a fresh re-review, report the gap and do
+   not claim strict completion.
+10. Stop completed subagent threads when the current surface supports it.
 
 ## Deliver
 
 Lead with the usable outcome. Report changed files, verification actually run,
 the execution mode, assurance mode, reviewer verdict when applicable,
-remaining risks or unsupported behavior, and any action still requiring user
-approval. Do not describe configured routing as observed runtime, or repository
-checks as live production evidence. Do not deploy, mutate production, commit,
-merge, push, or open a pull request unless the user authorized that external
-action.
+reviewer call counts, re-review rounds, child runtime checks and any mismatched
+or unverified lanes, remaining risks or unsupported behavior, and any action
+still requiring user approval. Do not describe configured routing as observed
+runtime, or repository checks as live production evidence. Do not deploy,
+mutate production, commit, merge, push, or open a pull request unless the user
+authorized that external action.

@@ -93,11 +93,20 @@ cd solweaver
 python3 scripts/install.py
 ```
 
-The installer copies the skill and agent definitions into `$CODEX_HOME`, or
-`~/.codex` when `CODEX_HOME` is unset. It refuses to replace an existing skill
-or non-identical agent file unless `--upgrade` is supplied. Upgrade mode creates
-timestamped backups before replacing them and reuses identical shared agent
-definitions.
+The installer copies the user-global skill to `~/.agents/skills/solweaver` and
+the agent definitions into `$CODEX_HOME/agents`, or `~/.codex/agents` when
+`CODEX_HOME` is unset. It refuses to replace an existing skill or non-identical
+agent file unless `--upgrade` is supplied. Upgrade mode creates timestamped
+backups before replacement, migrates a legacy `~/.codex/skills/solweaver`
+installation so Codex does not discover two copies, and reuses identical shared
+agent definitions. Use `--user-skills-dir` only when testing or intentionally
+targeting another user-skill root. Custom `--codex-home` and
+`--user-skills-dir` targets must be disjoint from the Solweaver source tree and
+from each other; the installer rejects any source/write or write/write overlap
+before mutation. It resolves every source, destination, legacy, and backup path
+through intermediate symlinks before making that comparison or writing. Its
+completion message prints an installed-copy validation command with both
+selected roots preserved.
 
 Upgrade an existing installation with:
 
@@ -140,14 +149,31 @@ You usually only need to describe the outcome. Sol keeps ownership of the plan,
 chooses solo execution or the smallest useful team, reviews the actual changes,
 and reports the evidence.
 
+Solweaver is project-neutral: it derives languages, frameworks, commands,
+contracts, and evidence conventions from the active workspace instead of
+embedding product-specific policy. It can therefore be used from any software
+repository where Codex can inspect the project guidance and run the applicable
+tools.
+
+For a small ordinary task, invoke Solweaver normally and let `auto` choose local
+solo execution with standard assurance. A small task does not create a team,
+final-strict ledger, reviewer call, or phase workflow merely because the skill
+was invoked.
+
+```text
+$solweaver
+
+Goal: fix the validation message typo and run its focused test.
+```
+
 ### Choose an execution mode
 
 | Mode | Implementation | Independent review |
 | --- | --- | --- |
-| `auto` (default) | Sol decides between working solo and using the smallest useful team | One final review when final-strict assurance applies |
+| `auto` (default) | Sol decides between working solo and using the smallest useful team | One target call, with bounded re-review only when final-strict applies |
 | `solo` | Sol plans, implements, and verifies alone; no subagents are spawned | None; standard assurance only |
-| `solo-reviewed` | Sol implements and verifies alone; no implementation workers are spawned | Always one final-strict gate, plus a fresh re-review after fixes |
-| `team` | At least one bounded Terra or Luna worker implements under Sol ownership | One final review when final-strict assurance applies |
+| `solo-reviewed` | Sol implements and verifies alone; no implementation workers are spawned | One target call, with bounded re-review while budget remains |
+| `team` | At least one bounded Terra or Luna worker implements under Sol ownership | One target call, with bounded re-review only when final-strict applies |
 
 Invoking Solweaver without a mode uses `auto`; it does not automatically spawn
 Terra or Luna.
@@ -193,7 +219,7 @@ then inspects and verifies the complete result.
 ### Final-strict mode
 
 Use final-strict when you want Sol to finish and verify one coherent phase or
-batch before paying for a fresh independent Sol review:
+delivery unit before using a fresh independent Sol review:
 
 ```text
 $solweaver
@@ -201,23 +227,48 @@ $solweaver
 Use team mode with final-strict assurance.
 
 Complete this coherent phase with parent verification after every checkpoint.
-Run one fresh final-strict review over the complete integrated batch at the
-declared final boundary.
+Run one fresh final-strict review over the complete integrated assurance unit
+at the declared final boundary.
 ```
 
-Sol records the exact base state, cumulative acceptance criteria, checkpoint
-evidence, known gaps, and the final boundary. Intermediate results are only
-`checkpoint-ready`: no final reviewer is spawned and no `ship` claim is made.
-At the final boundary, Sol re-inspects the complete cumulative diff from the
-recorded base, reruns integration or acceptance checks, and sends the whole
-batch to one fresh runtime-verified reviewer.
+Sol derives a stable `ASSURANCE_UNIT_ID` from repository and product authority,
+records `REOPEN_GENERATION`, and uses a durable ledger that survives task,
+worktree, branch, and candidate changes. The ledger contains the exact base,
+cumulative acceptance criteria, checkpoint evidence, review calls, known gaps,
+and final boundary. Intermediate results are only `checkpoint-ready`: no final
+reviewer is spawned and no `ship` claim is made.
+
+Sol records `FROZEN_CANDIDATE_ID` for the full behavior scope and a separate
+`ASSURANCE_PACKET_ID` for the ledger and evidence snapshot. Only the declared
+ledger and attempt-coordination sidecar are outside the behavior-candidate
+identity; product, test, and contract changes are never omitted. This lets
+review accounting advance without silently changing the frozen candidate.
+The repository identity reconciles staged, unstaged, and untracked paths;
+plain `git diff` is not sufficient when an in-scope file is untracked.
+If installed, generated, or runtime-loaded copies are part of the acceptance
+boundary, a deterministic `DELIVERY_ARTIFACT_MANIFEST` binds their actual
+content into the frozen candidate. Use the bundled
+`scripts/compute_delivery_manifest.py` with stable logical labels and retain its
+full `solweaver-delivery-v1` records plus the exact command at
+`DELIVERY_ARTIFACT_MANIFEST_LOCATION`. A parity check or unexplained aggregate
+by itself is evidence, not an immutable identity for those active files.
+
+At the final boundary, Sol freezes the candidate, re-inspects the complete
+cumulative diff from the recorded base, resolves product and architecture
+decisions, and reruns every applicable parent gate. It then performs a separate
+parent adversarial pass with a risk-surface map, counterexamples, negative
+paths, changed-to-unchanged interactions, fix-induced regressions, and
+test-sensitivity evidence. `missing` or `not_run` evidence blocks review. The
+assurance unit must also pass its one-pass reviewability gate and set
+`PARENT_ADVERSARIAL_READY: yes`; only then may `REVIEW_READY: yes` permit the
+reviewer spawn. This shifts defect discovery before the independent gate.
 
 Final-strict cannot defer review across destructive migration execution, real
 money movement, production auth or authorization changes, deployment, merge,
 release, or another irreversible external mutation. If that boundary arrives
-early, the accumulated relevant change must pass its final gate first. A batch
-that becomes too broad for one complete review must be split rather than
-partially omitted from the reviewer packet.
+early, the accumulated relevant change must pass its final gate first. An
+assurance unit that is too broad for one complete review must be redefined
+before call 1 rather than partially omitted from the reviewer packet.
 
 Final-strict is Solweaver's only independent-review assurance mode. It is
 selected automatically for `solo-reviewed` and for auth, authorization,
@@ -231,15 +282,87 @@ but it still requires a fresh reviewer and `ship` verdict before its final or
 protected boundary. A `fix-first` verdict returns findings to the responsible
 worker, while `rethink` returns the architecture to Sol.
 
-Each final-strict batch has a hard budget of two reviewer calls. Every reviewer
-spawn that begins execution counts, including a runtime mismatch or unusable
-verdict. If call 2 does not return a valid `ship`, Sol sets
-`REVIEW_STATUS: review-exhausted` and never starts call 3 for the same batch.
+Each final-strict assurance unit generation targets one reviewer call. The
+default hard budget is two. An optional `extended` budget permits at most three
+only when the user explicitly authorizes it before call 1; it is never selected
+automatically and cannot be enabled or increased after a call is reserved.
+Every reviewer spawn that begins execution counts, including a runtime mismatch
+or unusable verdict. The counter follows the stable unit across tasks, chats,
+continuations, worktrees, branches, spec revisions, and candidate commits.
+Renaming or splitting unchanged scope cannot reset it, and extended budget
+cannot compensate for an assurance unit that is too broad for one complete
+review pass.
+
+Before spawning a reviewer, Sol uses an exclusive durable coordination record
+to reserve the next call with a unique `REVIEW_ATTEMPT_ID`. The reservation
+occupies the budget before spawn, preventing two tasks from buying the same
+call. A Markdown/text journal alone is not a lock: the packet records the exact
+atomic lock or compare-and-set primitive, path or key, acquisition, protected
+transition, and release. Reservation fails closed unless the same identity and
+generation are loaded, `UNIT_STATUS: open`, `REVIEW_READY: yes`, budget remains,
+and no reservation is active. It becomes `started` when the child begins and
+may be released as `cancelled-before-start` only with exact proof. An
+interrupted or ambiguous
+reservation is recovered conservatively as consumed. Without an atomic
+reservation mechanism, `REVIEW_READY` stays `no`. A lock-busy contender creates
+no reservation and consumes no call.
+Completion under the same primitive clears the reservation and sets
+`UNIT_STATUS: ship` for an accepted `ship`, keeps it `open` only while another
+predeclared call remains, or sets `REVIEW_STATUS: review-exhausted` with
+`UNIT_STATUS: parent-recovery` after the final non-`ship` call.
+
+Any consumed call without a valid accepted `ship` enters the same re-review
+preparation gate when predeclared budget remains. This includes `fix-first`,
+`rethink`, an unusable or malformed verdict, and a missing or mismatched runtime
+gate. Sol resolves the outcome, refreezes the candidate, reruns parent
+adversarial readiness and the full gate, and creates a neutral re-review closure
+matrix before the next call, even when no source file changed. The next fresh
+reviewer still audits the full cumulative diff, but every blocker must identify
+the violated contract, reachable failure or material evidence gap, impact, and
+file references. Later-call findings also classify whether they were
+pre-existing, introduced by a fix, newly exposed by evidence, or caused by an
+acceptance mismatch. Review continues after the first blocker so findings are
+not intentionally drip-fed.
+If the prior runtime gate was missing or mismatched, configured TOML is not
+closure. Exact platform evidence that the intended child's `turn_context` will
+be exposed is required before spending another call; otherwise the remaining
+call stays unspent.
+
+When a non-`ship` call consumes the last predeclared call, Sol sets
+`REVIEW_STATUS: review-exhausted` and `UNIT_STATUS: parent-recovery`, and never
+exceeds or raises that maximum.
 Parent Sol then owns completion: it reconciles findings, makes conservative
-in-scope decisions, applies addressable fixes, and verifies the complete result
-without asking the user merely because the review budget ended. A completed
-result is reported as `FINAL_STATUS: parent-completed` and
-`ASSURANCE_STATUS: final-strict-not-achieved`, not reviewer `ship`.
+in-scope decisions, applies addressable fixes, refreezes, and verifies the
+complete result in the same generation without asking the user merely because
+the review budget ended or spawning another reviewer. When all work
+and acceptance criteria are complete with no known blocker, report:
+
+```text
+WORK_STATUS: complete
+ACCEPTANCE_STATUS: met
+KNOWN_BLOCKERS: none
+INDEPENDENT_ATTESTATION: not-obtained-within-budget
+FINAL_STATUS: parent-completed
+ASSURANCE_STATUS: final-strict-not-achieved
+```
+
+This says the work is complete while accurately withholding reviewer `ship`.
+Parent recovery terminates as `UNIT_STATUS: parent-completed`, `blocked`, or
+`blocked-external-boundary`; none can reserve another reviewer.
+
+A valid `ship` or a terminal parent-recovery result closes the generation.
+Review exhaustion closes only the independent review lane, leaving authorized
+parent fixes possible without replenishing calls. Later behavior-changing work
+after terminal closure needs an explicitly authorized incremented
+`REOPEN_GENERATION`, durable reason, and material new scope; evidence-only
+closure does not reopen it. Any `UNIT_STATUS` other than `open` blocks another
+reservation even when the old generation has unused numeric budget. After `ship`,
+`parent-completed`, `blocked`, or `blocked-external-boundary`, Sol records a
+post-phase retrospective with
+candidate attempts, exact-evidence reruns, reserved and started reviewer calls,
+finding classes, preventable waste, and at most three generalizable improvement
+proposals. Workflow changes are proposed for user approval, never applied
+automatically.
 
 ### Steer worker selection
 
@@ -289,7 +412,9 @@ Sol should finish with:
 - the usable outcome and changed-file scope;
 - verification commands actually run and their concrete results;
 - the execution mode, assurance mode, final-strict base and boundary when
-  applicable, and reviewer verdict;
+  applicable, stable assurance-unit identity, readiness result, review call
+  count, and reviewer verdict;
+- the post-phase retrospective status after a terminal final-strict result;
 - remaining gaps, risks, or behavior that was not proved; and
 - external actions such as commit, push, pull request, merge, or deployment
   still waiting for explicit authorization.
@@ -309,9 +434,15 @@ flowchart LR
     P --> I
     I --> A{"Fresh review required?"}
     A -->|"No"| R["Evidence-backed result"]
-    A -->|"Yes"| V["Fresh Sol max<br/>Read-only review"]
-    V -->|"ship"| R
-    V -->|"fix-first or rethink"| X["Revise and verify again"]
+    A -->|"Yes"| Q{"Readiness fully green?"}
+    Q -->|"No"| I
+    Q -->|"Yes"| V["Fresh Sol max<br/>Read-only review"]
+    V -->|"ship"| H["Post-phase retrospective"]
+    V -->|"not accepted"| C{"Review call"}
+    C -->|"Budget remains"| X["Close outcome and verify again"]
+    C -->|"Final budget call"| E["Review exhausted<br/>Parent recovery"]
+    E --> H
+    H --> R
     X --> I
 ```
 
@@ -358,14 +489,16 @@ hard-coded to a model because Solweaver does not own their definitions.
 | Mode | Use it for | Acceptance |
 | --- | --- | --- |
 | Standard | Ordinary work in `auto`, `solo`, or `team` execution | Parent inspects the complete diff and reruns proportionate checks |
-| Final-strict | One coherent phase or batch where intermediate work remains reversible | Parent verification at every checkpoint, then at most two fresh review calls; only a valid `ship` passes |
+| Final-strict | One stable phase or delivery unit where intermediate work remains reversible | Durable ledger, parent verification and adversarial readiness, then one target call with a default maximum of two or explicitly predeclared extended maximum of three; only a valid `ship` passes |
 
 Final-strict review is intentionally fresh-context and read-only. The reviewer
-never implements its findings. A first-call `fix-first` result returns to the
-responsible worker, or to Sol in `solo-reviewed`, and requires parent
-verification plus a closure matrix before the second and final review. A
-non-`ship` second call triggers `review-exhausted`. Sol separates implementation
-defects, evidence gaps, unresolved product or architecture decisions, and
+never implements its findings. Any call without a valid accepted `ship` returns
+to Sol for the same re-review preparation gate while predeclared budget remains:
+resolve the finding or failed runtime/packet prerequisite, refreeze the
+candidate, rerun parent adversarial readiness and the full gate, and attach a
+neutral closure matrix. A non-`ship` final budget call triggers
+`review-exhausted`. Sol separates implementation defects, evidence gaps,
+fix-induced regressions, unresolved product or architecture decisions, and
 acceptance-versus-review expectation mismatches, then owns the fixes and final
 verification instead of looping, requesting user direction, switching
 workflows, or lowering the review bar.
@@ -376,6 +509,7 @@ workflows, or lowering the review bar.
 | --- | --- |
 | [`skills/solweaver/`](./skills/solweaver/) | Codex skill and UI metadata |
 | [`skills/solweaver/references/runtime-smoke-test.md`](./skills/solweaver/references/runtime-smoke-test.md) | Restarted-task runtime certification procedure |
+| [`skills/solweaver/scripts/compute_delivery_manifest.py`](./skills/solweaver/scripts/compute_delivery_manifest.py) | Reproducible versioned manifest for installed delivery artifacts |
 | [`skills/solweaver/scripts/validate_install.py`](./skills/solweaver/scripts/validate_install.py) | Installed skill, agent, configuration, and routing validator |
 | [`agents/terra-worker.toml`](./agents/terra-worker.toml) | Terra worker definition at `max` |
 | [`agents/luna-worker.toml`](./agents/luna-worker.toml) | Luna worker definition at `max` |
@@ -399,10 +533,17 @@ workflows, or lowering the review bar.
 - Final-strict defers only the independent reviewer. Parent verification still
   runs at every checkpoint, intermediate work cannot claim `ship`, and protected
   irreversible or production boundaries require the final gate first.
-- The final-strict review budget is two calls per batch. A non-`ship` second
-  call hard-stops review and cannot be bypassed by resetting the same batch.
-  Parent Sol continues with transparent `parent-completed` recovery; protected
-  external actions remain unexecuted without their required authority.
+- The final-strict review target is one call. The default hard budget is two;
+  an explicitly predeclared extended budget is capped at three and cannot be
+  enabled after review begins. The durable counter crosses tasks, worktrees,
+  branches, and candidates. Exclusive durable reservation prevents concurrent
+  tasks from consuming the same call, and candidate identity stays separate
+  from mutable attempt accounting. A non-`ship` final budget call hard-stops
+  review and cannot be bypassed by raising the cap, renaming, splitting, or
+  reopening unchanged scope. It enters non-reviewable `parent-recovery`, where
+  Sol may fix and refreeze without replenishing calls, then terminates with
+  transparent work and independent-attestation status. Protected external
+  actions remain unexecuted without their required authority.
 - High-risk auth, money, tenant-isolation, data-integrity, concurrency, and
   production paths stay under parent control and require final-strict review;
   plain `solo` cannot claim final-strict acceptance.
@@ -419,12 +560,15 @@ python3 scripts/validate.py
 
 It validates skill frontmatter, folder and name consistency, UI metadata,
 worker TOML definitions, model assignments, reasoning effort, runtime-gate
-contracts, the smoke test, installer behavior, and the example configuration.
+contracts, the smoke test, and the example configuration. It also executes a
+throwaway installer matrix covering fresh installation, overwrite refusal,
+backup-on-upgrade, legacy-root migration, installed validation, and exact
+source-installed parity.
 
 Validate an installed copy with:
 
 ```bash
-python3 ~/.codex/skills/solweaver/scripts/validate_install.py
+python3 ~/.agents/skills/solweaver/scripts/validate_install.py
 ```
 
 Restart Codex or open a new task and follow the bundled runtime smoke test

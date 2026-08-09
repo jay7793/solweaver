@@ -25,19 +25,37 @@ jobs:
       - name: Test isolated installation
         run: |
           codex_home="$(mktemp -d)"
-          python3 scripts/install.py --codex-home "$codex_home"
-          python3 "$codex_home/skills/solweaver/scripts/validate_install.py" \
-            --codex-home "$codex_home"
+          user_skills_dir="$(mktemp -d)"
+          python3 scripts/install.py \
+            --codex-home "$codex_home" \
+            --user-skills-dir "$user_skills_dir"
+          python3 "$user_skills_dir/solweaver/scripts/validate_install.py" \
+            --codex-home "$codex_home" \
+            --user-skills-dir "$user_skills_dir"
+          test ! -e "$user_skills_dir/solweaver/scripts/__pycache__"
 
       - name: Test backup-on-upgrade installation
         run: |
           codex_home="$(mktemp -d)"
-          python3 scripts/install.py --codex-home "$codex_home"
-          if python3 scripts/install.py --codex-home "$codex_home"; then
+          user_skills_dir="$(mktemp -d)"
+          python3 scripts/install.py \
+            --codex-home "$codex_home" \
+            --user-skills-dir "$user_skills_dir"
+          if python3 scripts/install.py \
+            --codex-home "$codex_home" \
+            --user-skills-dir "$user_skills_dir"; then
             echo "installer unexpectedly overwrote an existing skill"
             exit 1
           fi
-          python3 scripts/install.py --codex-home "$codex_home" --upgrade
+          mkdir -p "$codex_home/skills"
+          cp -R "$user_skills_dir/solweaver" "$codex_home/skills/solweaver"
+          python3 scripts/install.py \
+            --codex-home "$codex_home" \
+            --user-skills-dir "$user_skills_dir" \
+            --upgrade
           test -d "$codex_home/backups"
-          python3 "$codex_home/skills/solweaver/scripts/validate_install.py" \
-            --codex-home "$codex_home"
+          test ! -e "$codex_home/skills/solweaver"
+          python3 "$user_skills_dir/solweaver/scripts/validate_install.py" \
+            --codex-home "$codex_home" \
+            --user-skills-dir "$user_skills_dir"
+          test ! -e "$user_skills_dir/solweaver/scripts/__pycache__"

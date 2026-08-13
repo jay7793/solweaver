@@ -1,4 +1,4 @@
 interface:
   display_name: "Solweaver"
-  short_description: "Sol works solo or leads bounded agents"
-  default_prompt: "Use $solweaver to run this software-development goal in auto mode, or select solo, solo-reviewed, or team execution explicitly."
+  short_description: "Sol leads a team with final-strict review"
+  default_prompt: "Use $solweaver to run this software-development goal with mandatory team execution and final-strict assurance."

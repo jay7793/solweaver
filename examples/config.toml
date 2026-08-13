@@ -1,5 +1,6 @@
 # Merge these values into ~/.codex/config.toml.
 model = "gpt-5.6-sol"
+# Example only: Solweaver accepts any reasoning effort supported by this model.
 model_reasoning_effort = "max"
 
 [agents]

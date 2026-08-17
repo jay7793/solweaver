@@ -1,23 +1,23 @@
 ---
 name: solweaver
 description: >-
-  Run Sol-led software development through one mandatory team workflow, with
-  GPT-5.6 Sol owning planning, integration, verification, and delivery;
-  terra_worker or luna_worker providing at least one bounded implementation
-  lane; and a fresh solweaver_reviewer providing final-strict review at every
-  declared assurance-unit boundary. Use when explicitly invoked for any
-  software-development task, including small fixes; for software-development
-  prompts beginning with Goal: or /goal; or when the user requests a software
-  team, agents, subagents, parallel work, or delegated implementation. Do not
-  use for parent-only implementation, general questions, research, writing, or
-  operations-only requests.
+  Run Sol-led software development in auto, solo, solo-reviewed, or team modes,
+  with GPT-5.6 Sol owning planning, implementation or delegation, integration,
+  verification, and delivery; terra_worker and luna_worker providing bounded
+  implementation; and solweaver_reviewer providing one fresh final-strict
+  review at a declared assurance-unit boundary. Use when explicitly invoked
+  for any software-development task, including small fixes; for
+  software-development prompts beginning with Goal: or /goal; or when the user
+  requests Sol-only work, a software team, agents, subagents, parallel work, or
+  delegated implementation. Do not use for general questions, research,
+  writing, or operations-only requests.
 ---
 
 # Solweaver
 
 Coordinate execution without delegating orchestration itself. Keep the main
-agent on the critical path. Always use a bounded implementation team and finish
-at a declared final-strict assurance boundary.
+agent on the critical path. Work solo or use the smallest team that materially
+improves speed, context isolation, or review quality.
 
 ## Preflight
 
@@ -28,9 +28,10 @@ at a declared final-strict assurance boundary.
 3. Keep the active parent as orchestrator. Require `gpt-5.6-sol` as the parent
    model, but allow any reasoning effort reported by the current `turn_context`.
    This skill cannot select or prove the runtime.
-4. Inspect available agent types before implementation. Require at least one
-   package-owned implementation worker and a fresh `solweaver_reviewer`. Do not
-   silently substitute a missing worker or reviewer.
+4. Inspect agent availability only when the selected path actually needs an
+   agent. Auto or solo execution with standard assurance does not require a
+   worker or reviewer to be available. Do not silently substitute a missing
+   agent when an explicit mode or assurance gate requires it.
 5. Describe model evidence precisely:
    - **Observed**: current session `turn_context` reports model and effort.
    - **Configured**: a validated agent definition pins the value, but runtime
@@ -65,28 +66,50 @@ at a declared final-strict assurance boundary.
     [references/runtime-smoke-test.md](references/runtime-smoke-test.md) before
     describing the workflow as runtime-certified.
 
-## Run the team workflow
+## Choose execution mode
 
-- Use **team execution** for every Solweaver task. There is no execution-mode
-  selection, and invoking Solweaver without extra routing instructions still
-  requires a team.
-- Spawn at least one bounded `terra_worker` or `luna_worker` implementation
-  lane before accepting implementation as complete. Small, low-risk, or
-  single-file work still requires one narrowly scoped worker.
-- Keep Sol responsible for planning, the immediate blocker, shared integration,
-  complete-diff inspection, verification, and delivery. Parent implementation
-  of critical-path or integration work does not replace the required worker
-  lane.
-- If the user requires parent-only work or forbids subagents, stop before
-  implementation and explain that the request is incompatible with Solweaver's
-  team contract. Do not silently switch workflows or weaken the requirement.
+- Use **auto mode** when the user does not name a mode. Sol chooses local solo
+  execution or the smallest useful team; invoking Solweaver alone does not
+  require a subagent.
+- For small, low-risk, low-coupling tasks in auto mode, prefer local solo
+  execution with standard assurance. Do not spawn a worker or reviewer, create
+  final-strict artifacts, or add phase machinery merely because Solweaver was
+  invoked.
+- Use **solo mode** when the user wants Sol alone. Sol plans, implements,
+  verifies, and delivers without spawning any worker or reviewer. Solo supports
+  standard assurance only.
+- Use **solo-reviewed mode** when the user wants Sol to implement alone with an
+  independent final gate. Do not spawn implementation workers; after parent
+  verification at the final-strict boundary, spawn one fresh
+  `solweaver_reviewer` at a time and apply final-strict acceptance, including a
+  fresh review after a fix round only while review budget remains.
+  Solo-reviewed always uses final-strict assurance.
+- Use **team mode** when the user explicitly requests delegation. Spawn at
+  least one bounded implementation worker, while Sol retains integration and
+  verification. Add the fresh reviewer only when a final-strict assurance unit
+  reaches its gate.
+- Honor an explicit mode without silently changing it. If solo mode conflicts
+  with a user-requested or risk-triggered independent review, stop before
+  implementation and ask the user to choose solo with standard assurance,
+  solo-reviewed, or auto/team execution with final-strict assurance.
 
-## Prepare final-strict assurance
+In auto mode, spawn only when at least one concrete benefit outweighs the
+coordination cost: a disjoint lane can shorten the critical path, context
+isolation reduces material risk, or the worker is a substantially better fit
+for a bounded assignment. File count, task size labels, or skill invocation
+alone are not reasons to delegate. Prefer one worker; add another only for
+independent write scopes that can make useful progress concurrently.
 
-- Use **final-strict assurance** for every Solweaver task. There is no assurance
-  selection or lightweight exemption. Every task must define one coherent
-  completed phase or delivery unit and reach a fresh independent review gate.
-- Before implementation, assign a stable
+## Choose assurance
+
+- Use **standard assurance** for ordinary work in auto, solo, or team execution.
+  Sol inspects the complete diff, reruns proportionate verification, and
+  accepts or returns the work without final-strict artifacts or a reviewer.
+- Use **final-strict assurance** when the user wants one independent review over
+  a coherent completed phase or delivery unit, or when the change affects auth,
+  authorization, secrets, tenant isolation, money, data integrity, migrations,
+  destructive behavior, concurrency, public APIs, production-critical paths,
+  or a wide architectural refactor. Before implementation, assign a stable
   `ASSURANCE_UNIT_ID`, set `REOPEN_GENERATION`, choose a durable
   `LEDGER_LOCATION` plus an exclusive `ATTEMPT_COORDINATION_LOCATION`, and
   record the exact base state, objective, acceptance criteria, final boundary,
@@ -94,15 +117,17 @@ at a declared final-strict assurance boundary.
   authority such as repository, track, and canonical phase or delivery ID;
   never derive it from a task, thread, worktree, branch, timestamp, or candidate
   SHA.
-  Apply parent verification after every intermediate checkpoint, do
+  Apply standard parent verification after every intermediate checkpoint, do
   not spawn `solweaver_reviewer` yet, and report only `checkpoint-ready`.
 - At the declared final boundary, inspect the complete cumulative diff from the
   recorded base, rerun proportionate integration and acceptance checks, then
   pass the referenced final-strict readiness gate before applying the fresh
   reviewer gate and final-strict acceptance rules.
-- Final-strict is Solweaver's only assurance mode and its only independent-review
-  assurance mode. Readiness must lead to a fresh `solweaver_reviewer` attempt;
-  parent self-review never satisfies the independent gate.
+- Final-strict is Solweaver's only independent-review assurance mode. Auto and
+  team use standard assurance unless final-strict is requested or
+  risk-triggered; solo-reviewed always uses final-strict. Readiness must lead
+  to a fresh `solweaver_reviewer` attempt; parent self-review never satisfies
+  the independent gate.
 - Record `REVIEW_BUDGET_MODE` before reviewer call 1. Use `default` unless the
   user explicitly authorizes `extended` in advance: `default` sets
   `TARGET_REVIEW_CALLS = 1` and `MAX_REVIEW_CALLS = 2`; `extended` keeps the
@@ -166,7 +191,7 @@ at a declared final-strict assurance boundary.
   extended budget cannot repair incoherent scope. After a reviewer begins,
   splitting or renaming scope never replenishes the budget. Never omit parts
   of the diff merely to preserve the one-review target.
-- Never describe a parent self-review as independent review.
+- Never describe solo execution or a parent self-review as independent review.
   Never describe an intermediate final-strict checkpoint as `ship` or
   final-strict acceptance.
 
@@ -191,8 +216,13 @@ at a declared final-strict assurance boundary.
 
 ## Select agents
 
-Spawn at least one bounded implementation worker for every task. Select the
-smallest useful worker set, but never reduce it to zero.
+Apply the selected execution mode before routing:
+
+- In solo mode, do not spawn any agent.
+- In solo-reviewed mode, spawn no implementation worker and reserve reviewer
+  spawns for the final-strict gate and any required re-review.
+- In team mode, spawn at least one bounded implementation worker.
+- In auto mode, spawn only agents that materially improve the outcome.
 
 - Use `terra_worker` for the default implementation path and for ambiguous,
   coupled, multi-file, architecture-sensitive, backend, frontend, database,
@@ -209,13 +239,14 @@ smallest useful worker set, but never reduce it to zero.
   current runtime exposes them and their specialization materially helps.
 - Use another implementation agent only when the user explicitly requests it.
 
-Parallelize disjoint assignments within the configured concurrency limit; the
-limit is a ceiling, not a target. Terra and Luna may run together only when
-their ownership is disjoint.
+When workers are allowed, parallelize disjoint assignments within the
+configured concurrency limit; the limit is a ceiling, not a target. Terra and
+Luna may run together only when their ownership is disjoint.
 
 ## Coordinate execution
 
-Apply these rules to active subagents.
+Apply these rules to active subagents. In solo mode, keep all execution local
+to the parent.
 
 1. Tell every writing agent it is not alone in the codebase, must preserve
    unrelated edits, and owns only its assigned scope.
@@ -235,16 +266,16 @@ Apply these rules to active subagents.
    evidence or count that lane as correctly routed. Inspect the shared
    worktree and complete diff, preserve all unrelated changes, and never roll
    back child edits automatically.
-8. If a required worker lane fails its runtime gate, pause before further
-   implementation and make at most one corrected re-dispatch when the expected
-   runtime is available; otherwise request user direction. Parent inspection
-   may preserve or salvage shared-worktree edits, but it does not satisfy the
-   required correctly routed worker lane.
+8. In auto mode, Sol may take ownership of inspected changes and verify them
+   locally, but must report the failed worker lane. In explicit team mode,
+   pause before further implementation and make at most one corrected
+   re-dispatch when the expected runtime is available; otherwise request user
+   direction. Never downgrade an explicit team request silently.
 
 ## Integrate and verify
 
-1. Treat worker reports as claims. Inspect the working tree, complete diff, and
-   changed-file scope.
+1. When workers exist, treat their reports as claims. In every mode, inspect
+   the working tree, complete diff, and changed-file scope.
 2. Review for correctness, maintainability, contract compatibility, and
    interaction with concurrent edits.
 3. Rerun focused checks first, then broader checks proportionate to risk.
@@ -252,8 +283,9 @@ Apply these rules to active subagents.
    production evidence; one level does not prove another.
 4. Compare the evidence with the original acceptance criteria and note anything
    not run or not proved.
-5. At each intermediate checkpoint, update the durable assurance-unit ledger
-   with changed scope, verification, decisions, and known gaps.
+5. In final-strict mode at each intermediate checkpoint, update the durable
+   assurance-unit ledger with changed scope, verification, decisions, and
+   known gaps.
    Do not spawn the final-strict reviewer and do not claim more than
    `checkpoint-ready`.
 6. At the final-strict boundary, re-establish the recorded base, inspect the
@@ -267,8 +299,8 @@ Apply these rules to active subagents.
 7. If final-strict work approaches a protected irreversible or production
    boundary before the declared end, treat that boundary as the final gate for
    the relevant accumulated change. Do not cross it with deferred review.
-8. At the final-strict boundary, complete the referenced readiness gate.
-   Require a durable loaded ledger, stable identity,
+8. At a final-strict boundary, including solo-reviewed execution, complete the
+   referenced readiness gate. Require a durable loaded ledger, stable identity,
    recorded review-budget mode, exact base, `FROZEN_CANDIDATE_ID`,
    `ASSURANCE_PACKET_ID`, fully classified acceptance criteria, resolved product
    and architecture decisions, a passed reviewability gate, complete cumulative
@@ -309,9 +341,10 @@ Apply these rules to active subagents.
    close that reviewer. If recorded budget remains, enter the universal
    re-review preparation gate. This includes `fix-first`, `rethink`, an
    unusable or malformed verdict, and a missing or mismatched runtime gate.
-   Return concrete findings to the responsible worker; Sol owns shared
-   integration fixes and reconciles architecture and scope on `rethink`.
-   Correct packet, capacity, or runtime prerequisites for an unusable attempt.
+   Return concrete findings to the responsible worker, or fix them in the
+   parent for solo-reviewed execution; reconcile architecture and scope on
+   `rethink`; and correct packet, capacity, or runtime prerequisites for an
+   unusable attempt.
    Refreeze the candidate, rerun parent verification,
    adversarial readiness, and the complete readiness gate, then complete the
    referenced `re-review closure matrix` before reserving the next call. The
@@ -369,14 +402,14 @@ Apply these rules to active subagents.
 ## Deliver
 
 Lead with the usable outcome. Report changed files, verification actually run,
-team execution, final-strict assurance, final-strict base and boundary,
-`ASSURANCE_UNIT_ID`, `REOPEN_GENERATION`, ledger location,
+the execution mode, assurance mode, final-strict base and boundary when
+applicable, `ASSURANCE_UNIT_ID`, `REOPEN_GENERATION`, ledger location,
 attempt-coordination location, `FROZEN_CANDIDATE_ID`, `ASSURANCE_PACKET_ID`,
 readiness result, reviewer verdict, reserved and started call counts, attempt
 states, re-review rounds, child runtime checks and any mismatched or unverified
 lanes, review-budget mode and exhaustion, `WORK_STATUS`, `ACCEPTANCE_STATUS`,
-`KNOWN_BLOCKERS`, `INDEPENDENT_ATTESTATION`, final and assurance status,
-post-phase retrospective status, remaining risks or unsupported
+`KNOWN_BLOCKERS`, `INDEPENDENT_ATTESTATION`, final and assurance status when
+applicable, post-phase retrospective status, remaining risks or unsupported
 behavior, and any protected external action left unexecuted. Lead with work and
 acceptance state so lack of independent attestation is not mistaken for
 unfinished implementation. Do not describe configured routing as observed

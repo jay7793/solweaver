@@ -24,10 +24,10 @@ Act as the assigned implementation worker. You are not alone in the codebase.
 Preserve unrelated edits and own only the scope below.
 
 EXECUTION MODE
-team
+<auto | team>
 
 ASSURANCE MODE
-final-strict
+<standard | final-strict>
 
 OBJECTIVE
 <Observable outcome and why it matters.>
@@ -290,10 +290,10 @@ Act as a fresh read-only reviewer. Do not edit files, implement fixes, commit,
 push, or orchestrate other agents.
 
 EXECUTION MODE
-team
+<auto | solo-reviewed | team>
 
 ASSURANCE MODE
-final-strict
+<final-strict>
 
 ASSURANCE UNIT
 - ASSURANCE_UNIT_ID: <stable repository/track/phase-or-delivery-id>
@@ -550,10 +550,9 @@ When a worker gate fails:
    automatically.
 3. Let Sol inspect the complete diff and verify any salvageable changes before
    taking ownership of them.
-4. Pause and make at most one corrected re-dispatch when the expected runtime
-   is available; otherwise request user direction. Parent inspection may
-   preserve or salvage shared-worktree edits, but it does not satisfy the
-   required correctly routed worker lane.
+4. In auto mode, Sol may continue locally while reporting the failed lane. In
+   explicit team mode, pause and make at most one corrected re-dispatch when
+   the expected runtime is available; otherwise request user direction.
 
 When the reviewer gate fails, reject the verdict and do not claim final-strict
 acceptance. The attempt still consumes one review call when the child began

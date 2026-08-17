@@ -17,21 +17,17 @@ authorize external actions.
 2. Confirm current session `turn_context` reports `model == "gpt-5.6-sol"` and
    exposes the selected `effort`. Do not require `max` for the parent;
    configuration alone is not observed runtime evidence.
-3. Invoke `$solweaver` without naming an execution or assurance option for a
-   small, low-risk documentation-only task. Confirm it still uses team
-   execution, creates final-strict artifacts before implementation, dispatches
-   at least one bounded implementation worker, and reaches a fresh reviewer
-   gate. This is the required runtime probe for the no-lightweight-bypass
-   invariant.
-4. Route one controlled bounded assignment to Terra. Inspect the child
-   `turn_context` and require `model == "gpt-5.6-terra"` and `effort == "max"`
-   before counting the worker lane. Complete the task through its final-strict
-   gate.
-5. Repeat in a separate controlled task with one bounded Luna assignment.
-   Require `model == "gpt-5.6-luna"` and `effort == "max"` before counting the
-   lane, and complete that task through its final-strict gate.
-6. Exercise mandatory final-strict assurance on a controlled assurance unit
-   with at least two intermediate checkpoints. Confirm Sol derives a stable
+3. Invoke `$solweaver` in auto mode for a small, low-risk documentation-only
+   task with standard assurance. Confirm Sol completes it locally without a
+   worker, reviewer, final-strict ledger, phase machinery, or review call. This
+   is the required runtime probe for the lightweight small-task invariant.
+4. Invoke `$solweaver` in team mode with one bounded Terra assignment. Inspect
+   the child `turn_context` and require `model == "gpt-5.6-terra"` and
+   `effort == "max"` before counting the worker lane.
+5. Repeat with one disjoint bounded Luna assignment. Require
+   `model == "gpt-5.6-luna"` and `effort == "max"` before counting the lane.
+6. Invoke final-strict assurance on a controlled assurance unit with at least
+   two intermediate checkpoints. Confirm Sol derives a stable
    `ASSURANCE_UNIT_ID`, starts `REOPEN_GENERATION: 0`, selects a durable
    `LEDGER_LOCATION` plus `ATTEMPT_COORDINATION_LOCATION`, records
    `TARGET_REVIEW_CALLS: 1`, `REVIEW_BUDGET_MODE: default`, and
@@ -157,8 +153,7 @@ authorize external actions.
 ## Record
 
 Record the parent model and effort, each child `turn_context.model` and
-`turn_context.effort`, agent names, call order, team execution and final-strict
-assurance,
+`turn_context.effort`, agent names, call order, execution and assurance modes,
 worker status, reviewer verdict, changed fixture files, verification commands,
 final-strict base and boundary, `ASSURANCE_UNIT_ID`, `REOPEN_GENERATION`,
 `LEDGER_LOCATION`, `ATTEMPT_COORDINATION_LOCATION`, `FROZEN_CANDIDATE_ID`,

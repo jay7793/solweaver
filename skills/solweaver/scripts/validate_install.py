@@ -174,11 +174,13 @@ def main() -> int:
         "complete cumulative diff from the",
         "protected irreversible or production",
         "Never describe an intermediate final-strict checkpoint",
-        "Use **team execution** for every Solweaver task",
-        "Small, low-risk, or single-file work still requires one narrowly scoped worker",
-        "Use **final-strict assurance** for every Solweaver task",
-        "Final-strict is Solweaver's only assurance mode",
-        "at least one bounded implementation worker for every task",
+        "Use **auto mode** when the user does not name a mode",
+        "For small, low-risk, low-coupling tasks",
+        "Do not spawn a worker or reviewer",
+        "File count, task size labels, or skill invocation alone are not reasons to delegate",
+        "Prefer one worker",
+        "Use **standard assurance** for ordinary work",
+        "Final-strict is Solweaver's only independent-review assurance mode",
         "Keep Solweaver project-neutral",
         "`ASSURANCE_UNIT_ID`",
         "`REOPEN_GENERATION`",
@@ -239,16 +241,21 @@ def main() -> int:
         "The intended parent configuration is `gpt-5.6-sol` at `max`",
         "If the observed parent is not Sol Max",
         "select `gpt-5.6-sol` with `max` reasoning",
-        "auto mode",
-        "solo-reviewed",
-        "solo mode",
-        "standard assurance",
-        "standard mode",
-        "plain solo",
     ):
         require(
             stale.lower() not in skill.lower(),
             f"SKILL.md: retains legacy or parent max-only gate: {stale}",
+            errors,
+        )
+    for forbidden in (
+        "Use **team execution** for every Solweaver task",
+        "Use **final-strict assurance** for every Solweaver task",
+        "Small, low-risk, or single-file work still requires one narrowly scoped worker",
+        "at least one bounded implementation worker for every task",
+    ):
+        require(
+            not contains_phrase(skill, forbidden),
+            f"SKILL.md: reintroduces mandatory overhead: {forbidden}",
             errors,
         )
     require(
@@ -275,18 +282,15 @@ def main() -> int:
         "$solweaver" in ui, "openai.yaml: default prompt must invoke $solweaver", errors
     )
     for term in (
-        'short_description: "Sol leads a team with final-strict review"',
-        "mandatory team execution and final-strict assurance",
+        'short_description: "Sol works solo or leads bounded agents"',
+        "auto mode",
+        "solo-reviewed",
+        "team execution",
+        "standard assurance unless risk",
     ):
         require(
             term in ui,
-            f"openai.yaml: missing team/final-strict metadata: {term}",
-            errors,
-        )
-    for stale in ("auto mode", "solo-reviewed", "solo mode", "standard assurance"):
-        require(
-            stale not in ui.lower(),
-            f"openai.yaml: retains legacy wording: {stale}",
+            f"openai.yaml: missing adaptive metadata: {term}",
             errors,
         )
 
@@ -410,29 +414,8 @@ def main() -> int:
         errors,
     )
     require(
-        contracts.count("EXECUTION MODE\nteam") == 2,
-        "contracts: worker and reviewer packets must fix execution to team",
-        errors,
-    )
-    require(
-        contracts.count("ASSURANCE MODE\nfinal-strict") == 2,
-        "contracts: worker and reviewer packets must fix assurance to final-strict",
-        errors,
-    )
-    for stale in (
-        "<auto",
-        "solo-reviewed",
-        "solo mode",
-        "<standard",
-        "standard assurance",
-    ):
-        require(
-            stale not in contracts.lower(),
-            f"contracts: retain legacy workflow wording: {stale}",
-            errors,
-        )
-    require(
-        "<final-strict | strict>" not in contracts,
+        "<standard | final-strict | strict>" not in contracts
+        and "<final-strict | strict>" not in contracts,
         "contracts: legacy strict assurance must be removed",
         errors,
     )
@@ -450,10 +433,11 @@ def main() -> int:
         'effort == "max"',
         "model-generated self-report",
         "focused routing smoke is not full implementation end-to-end proof",
-        "team execution",
-        "at least one bounded implementation worker",
-        "mandatory final-strict assurance",
-        "no-lightweight-bypass invariant",
+        "auto mode",
+        "team mode",
+        "standard assurance",
+        "final-strict assurance",
+        "lightweight small-task invariant",
         "checkpoint-ready",
         "`ASSURANCE_UNIT_ID`",
         "`REOPEN_GENERATION`",
@@ -512,20 +496,6 @@ def main() -> int:
         "runtime smoke test: retains parent max-only gate",
         errors,
     )
-    for stale in (
-        "auto mode",
-        "solo-reviewed",
-        "solo mode",
-        "standard assurance",
-        "standard mode",
-        "lightweight small-task invariant",
-    ):
-        require(
-            stale not in runtime_smoke.lower(),
-            f"runtime smoke test: retains legacy workflow wording: {stale}",
-            errors,
-        )
-
     validate_agent(
         codex_home / "agents" / "terra-worker.toml",
         "terra_worker",

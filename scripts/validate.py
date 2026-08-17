@@ -374,36 +374,49 @@ def validate_skill() -> None:
     require("terra_worker" in text, "skill must route Terra work")
     require("luna_worker" in text, "skill must route Luna work")
     require("solweaver_reviewer" in text, "skill must define final-strict review")
+    require("standard assurance" in text, "skill must define standard assurance")
+    require("final-strict assurance" in text, "skill must define final-strict assurance")
     require(
-        contains_phrase(text, "Use **team execution** for every Solweaver task"),
-        "skill must require team execution for every task",
+        "Final-strict is Solweaver's only independent-review assurance mode" in text,
+        "skill must keep final-strict as the only independent assurance mode",
     )
     for term in (
         "Keep Solweaver project-neutral",
-        "Small, low-risk, or single-file work still requires one narrowly scoped worker",
-        "Use **final-strict assurance** for every Solweaver task",
-        "Final-strict is Solweaver's only assurance mode",
-        "at least one bounded implementation worker for every task",
+        "For small, low-risk, low-coupling tasks",
+        "Do not spawn a worker or reviewer",
+        "File count, task size labels, or skill invocation alone are not reasons to delegate",
+        "Prefer one worker",
     ):
         require(
             contains_phrase(text, term),
-            f"skill missing team/final-strict contract: {term}",
+            f"skill missing adaptive-overhead contract: {term}",
         )
     require("Use **strict mode**" not in text, "legacy strict mode must be removed")
     for stale in (
         "for each final-strict batch",
         "third reviewer for the same batch",
         "Final-strict batch ledger",
-        "auto mode",
-        "solo mode",
-        "solo-reviewed",
-        "standard assurance",
-        "standard mode",
-        "plain solo",
     ):
         require(
             stale.lower() not in text.lower(),
-            f"SKILL.md retains legacy workflow wording: {stale}",
+            f"SKILL.md retains reset-prone wording: {stale}",
+        )
+    for mode in ("auto mode", "solo mode", "solo-reviewed mode", "team mode"):
+        require(mode in text, f"skill must define {mode}")
+    require("do not spawn any agent" in text, "solo mode must prohibit agents")
+    require(
+        "Never describe solo execution" in text,
+        "solo mode must not claim independent review",
+    )
+    for forbidden in (
+        "Use **team execution** for every Solweaver task",
+        "Use **final-strict assurance** for every Solweaver task",
+        "Small, low-risk, or single-file work still requires one narrowly scoped worker",
+        "at least one bounded implementation worker for every task",
+    ):
+        require(
+            not contains_phrase(text, forbidden),
+            f"SKILL.md reintroduces mandatory overhead: {forbidden}",
         )
     for term in (
         "runtime-smoke-test.md",
@@ -511,26 +524,8 @@ def validate_skill() -> None:
         "worker and reviewer packets must define assurance mode",
     )
     require(
-        contracts.count("EXECUTION MODE\nteam") == 2,
-        "worker and reviewer packets must fix execution to team",
-    )
-    require(
-        contracts.count("ASSURANCE MODE\nfinal-strict") == 2,
-        "worker and reviewer packets must fix assurance to final-strict",
-    )
-    for stale in (
-        "<auto",
-        "solo-reviewed",
-        "solo mode",
-        "<standard",
-        "standard assurance",
-    ):
-        require(
-            stale not in contracts.lower(),
-            f"contracts retain legacy workflow wording: {stale}",
-        )
-    require(
-        "<final-strict | strict>" not in contracts,
+        "<standard | final-strict | strict>" not in contracts
+        and "<final-strict | strict>" not in contracts,
         "contracts must not expose legacy strict assurance",
     )
     for term in (
@@ -641,10 +636,11 @@ def validate_skill() -> None:
         'effort == "max"',
         "model-generated self-report",
         "focused routing smoke is not full implementation end-to-end proof",
-        "team execution",
-        "at least one bounded implementation worker",
-        "mandatory final-strict assurance",
-        "no-lightweight-bypass invariant",
+        "auto mode",
+        "team mode",
+        "standard assurance",
+        "final-strict assurance",
+        "lightweight small-task invariant",
         "checkpoint-ready",
         "`ASSURANCE_UNIT_ID`",
         "`REOPEN_GENERATION`",
@@ -701,19 +697,6 @@ def validate_skill() -> None:
         ),
         "runtime smoke test retains parent max-only gate",
     )
-    for stale in (
-        "auto mode",
-        "solo-reviewed",
-        "solo mode",
-        "standard assurance",
-        "standard mode",
-        "lightweight small-task invariant",
-    ):
-        require(
-            stale not in runtime_smoke.lower(),
-            f"runtime smoke test retains legacy workflow wording: {stale}",
-        )
-
     validate_python(SKILL_DIR / "scripts" / "validate_install.py")
     validate_python(SKILL_DIR / "scripts" / "compute_delivery_manifest.py")
 
@@ -723,12 +706,13 @@ def validate_skill() -> None:
         "openai.yaml default prompt must invoke the skill",
     )
     for term in (
-        'short_description: "Sol leads a team with final-strict review"',
-        "mandatory team execution and final-strict assurance",
+        'short_description: "Sol works solo or leads bounded agents"',
+        "auto mode",
+        "solo-reviewed",
+        "team execution",
+        "standard assurance unless risk",
     ):
-        require(term in ui, f"openai.yaml missing team/final-strict metadata: {term}")
-    for stale in ("auto mode", "solo-reviewed", "solo mode", "standard assurance"):
-        require(stale not in ui.lower(), f"openai.yaml retains legacy wording: {stale}")
+        require(term in ui, f"openai.yaml missing adaptive metadata: {term}")
 
 
 def validate_agent(
@@ -832,28 +816,17 @@ def validate_examples() -> None:
     )
     require("final-strict" in policy, "AGENTS example must define final-strict")
     require("checkpoint-ready" in policy, "AGENTS example must bound checkpoints")
-    require(
-        contains_phrase(policy, "Solweaver has one execution contract: team execution"),
-        "AGENTS example must require team execution",
-    )
-    require(
-        contains_phrase(policy, "Every task must dispatch at least one bounded implementation worker"),
-        "AGENTS example must require an implementation worker for every task",
-    )
-    require(
-        contains_phrase(policy, "Solweaver has one assurance contract: final-strict"),
-        "AGENTS example must require final-strict assurance",
-    )
-    for stale in (
-        "auto mode",
-        "solo-reviewed",
-        "solo mode",
-        "standard assurance",
-        "support two assurance modes",
+    for term in (
+        "Support four execution modes",
+        "`auto` by default",
+        "`solo-reviewed`",
+        "`team` for at least one bounded implementation worker",
+        "Support two assurance modes",
+        "Standard assurance is the default for ordinary low-risk work",
     ):
         require(
-            stale not in policy.lower(),
-            f"AGENTS example retains legacy workflow wording: {stale}",
+            contains_phrase(policy, term),
+            f"AGENTS example missing adaptive contract: {term}",
         )
     require(
         "REVIEW_BUDGET_MODE: default" in policy
@@ -952,11 +925,13 @@ def validate_package() -> None:
         "project-neutral",
         "scripts/validate_install.py",
         "never rolls them back automatically",
-        "One execution contract",
-        "Team execution is the default and the only Solweaver workflow",
-        "never reduces it to zero",
-        "Final-strict every time",
-        "Final-strict is Solweaver's only assurance contract",
+        "Choose an execution mode",
+        "`auto` (default)",
+        "does not automatically spawn",
+        "Final-strict when needed",
+        "independent-review assurance contract",
+        "Standard assurance avoids reviewer, ledger, manifest, and coordination overhead",
+        "File count and skill invocation alone are not reasons to spawn",
         "complete cumulative diff",
         "protected boundary",
         "stable `ASSURANCE_UNIT_ID`",
@@ -1007,21 +982,17 @@ def validate_package() -> None:
             f"README missing runtime or upgrade guidance: {term}",
         )
     require(
-        "| Orchestrator and integrator | `gpt-5.6-sol` / any supported effort |"
+        "| Orchestrator and local implementer | `gpt-5.6-sol` / any supported effort |"
         in readme,
-        "README must define the parent as orchestrator and integrator",
+        "README must define the parent as orchestrator and local implementer",
     )
     for stale in (
         "per batch",
         "same batch",
         "Final-strict batch",
-        "auto mode",
-        "solo-reviewed",
-        "solo mode",
-        "standard assurance",
-        "standard mode",
-        "plain solo",
-        "orchestrator and solo implementer",
+        "Mandatory team execution",
+        "Final-strict always",
+        "There is no lightweight bypass",
     ):
         require(
             stale.lower() not in readme.lower(),
@@ -1048,8 +1019,8 @@ def main() -> int:
     validate_examples()
     validate_package()
     print(
-        "Validation passed: mandatory team execution with at least one "
-        "runtime-gated Terra/Luna worker, final-strict assurance on every task, "
+        "Validation passed: adaptive auto/solo/solo-reviewed/team execution, "
+        "standard/final-strict assurance, runtime-gated Terra/Luna workers, "
         "phase-stable final-strict ledger with exclusive call reservation, "
         "separate candidate/packet identities, adversarial readiness and "
         "evidence-bar review, one-call target with bounded default/extended "

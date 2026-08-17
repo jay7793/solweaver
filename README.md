@@ -1,8 +1,8 @@
 <div align="center">
   <img src="./assets/solweaver-mark.svg" width="92" height="92" alt="Solweaver logo">
   <h1>Solweaver</h1>
-  <p><strong>One Sol lead. One team workflow. Final-strict every time.</strong></p>
-  <p>A practical Codex software workflow where GPT-5.6 Sol leads GPT-5.6 Terra or Luna as bounded implementers and closes every task with a fresh independent review.</p>
+  <p><strong>One Sol lead. Adaptive execution. Assurance proportional to risk.</strong></p>
+  <p>A practical Codex software workflow where GPT-5.6 Sol works locally or leads GPT-5.6 Terra and Luna as bounded implementers, adding independent review when the risk justifies it.</p>
   <p>
     <a href="https://github.com/jay7793/solweaver/actions/workflows/validate.yml"><img src="https://img.shields.io/github/actions/workflow/status/jay7793/solweaver/validate.yml?branch=main&amp;style=flat-square&amp;label=validate" alt="Validation status"></a>
     <a href="https://github.com/jay7793/solweaver/releases/latest"><img src="https://img.shields.io/github/v/release/jay7793/solweaver?style=flat-square&amp;label=release" alt="Latest release"></a>
@@ -26,23 +26,23 @@
 ## Why Solweaver
 
 Multi-agent workflows are useful only when ownership stays clear. Solweaver
-keeps Sol accountable for the whole outcome, requires at least one bounded
-implementation worker, and ends every task at a final-strict review boundary.
+keeps Sol accountable for the whole outcome, works locally when delegation
+would cost more than it saves, and adds stronger ceremony only as risk grows.
 
 | Sol leads | Terra builds | Luna accelerates |
 | --- | --- | --- |
-| Plans, routes, integrates, verifies, and delivers | Handles coupled, ambiguous, multi-file, and judgment-heavy implementation | Handles narrow, mechanical, repetitive, and high-throughput assignments |
+| Plans, implements or routes, integrates, verifies, and delivers | Handles coupled, ambiguous, multi-file, and judgment-heavy implementation | Handles narrow, mechanical, repetitive, and high-throughput assignments |
 
 - **One accountable lead:** Sol remains on the critical path from plan to final
   evidence.
-- **Mandatory team execution:** every task gives at least one implementation
-  lane to Terra or Luna; Sol never delegates orchestration.
+- **Purposeful routing:** auto mode keeps small, low-risk work with Sol and adds
+  Terra or Luna only when a bounded worker materially helps.
 - **Safe parallelism:** workers run together only when their ownership is
   explicit and their write scopes are disjoint.
 - **Verification built in:** worker summaries are not treated as proof; Sol
   reviews the changes and runs appropriate checks.
-- **Final-strict always:** every task records one coherent assurance unit and
-  uses a fresh read-only reviewer at the declared final or protected boundary.
+- **Risk-proportional assurance:** ordinary work uses parent verification;
+  high-risk or explicitly requested work adds a durable final-strict gate.
 - **Runtime honesty:** configured model routing is kept distinct from model and
   effort actually exposed by runtime metadata.
 - **No surprise publishing:** deployment, production mutation, commits, pushes,
@@ -146,8 +146,8 @@ Solweaver automatically.
 ## Usage
 
 You usually only need to describe the outcome. Sol keeps ownership of the plan,
-assigns at least one bounded implementation lane, reviews the actual changes,
-and reports the final-strict evidence.
+chooses local execution or the smallest useful team, reviews the actual
+changes, and reports evidence proportional to risk.
 
 Solweaver is project-neutral: it derives languages, frameworks, commands,
 contracts, and evidence conventions from the active workspace instead of
@@ -155,10 +155,9 @@ embedding product-specific policy. It can therefore be used from any software
 repository where Codex can inspect the project guidance and run the applicable
 tools.
 
-For a small ordinary task, invoke Solweaver normally. It still creates a bounded
-team, assigns one narrow implementation lane, records the final-strict ledger,
-and uses a fresh reviewer at the declared boundary. There is no lightweight
-bypass.
+For a small ordinary task, invoke Solweaver normally. Auto mode keeps the work
+with Sol when delegation would add coordination cost, uses standard assurance,
+and does not create final-strict artifacts or call a reviewer.
 
 ```text
 $solweaver
@@ -166,16 +165,25 @@ $solweaver
 Goal: fix the validation message typo and run its focused test.
 ```
 
-### One execution contract
+### Choose an execution mode
 
-| Workflow | Implementation | Independent review |
+| Mode | Implementation | Independent review |
 | --- | --- | --- |
-| `team` | At least one bounded Terra or Luna worker implements under Sol ownership | One target final-strict call, with bounded re-review while budget remains |
+| `auto` (default) | Sol chooses local execution or the smallest useful team | Added only when final-strict applies |
+| `solo` | Sol plans, implements, and verifies without subagents | None; standard assurance only |
+| `solo-reviewed` | Sol implements and verifies; no implementation worker is spawned | One target final-strict call, with bounded re-review while budget remains |
+| `team` | At least one bounded Terra or Luna worker implements under Sol ownership | Added only when final-strict applies |
 
-Team execution is the default and the only Solweaver workflow. Sol chooses the
-smallest useful worker set, but never reduces it to zero. If a request forbids
-subagents or requires parent-only implementation, it is incompatible with
-Solweaver and must be handled through a different workflow.
+Invoking Solweaver without a mode uses `auto`; it does not automatically spawn
+Terra, Luna, or a reviewer. Explicit modes are honored without silent
+downgrades. Plain `solo` cannot claim independent review; use `solo-reviewed`
+when local implementation still needs a fresh final gate.
+
+Auto delegates only for a concrete benefit: a disjoint lane shortens the
+critical path, context isolation materially reduces risk, or a worker is a
+substantially better fit for a bounded assignment. File count and skill
+invocation alone are not reasons to spawn. It prefers one worker and adds
+another only when independent write scopes can progress concurrently.
 
 Use the same contract for ordinary feature work:
 
@@ -185,13 +193,16 @@ $solweaver
 Goal: add profile editing with validation and regression tests.
 ```
 
-Sol assigns at least one implementation worker, then inspects and verifies the
+Sol decides whether delegation adds value, then inspects and verifies the
 complete result.
 
-### Final-strict every time
+### Final-strict when needed
 
-Every task defines one coherent phase or delivery unit and uses a fresh
-independent Sol review after parent verification:
+Final-strict applies when explicitly requested or when work affects auth,
+authorization, secrets, tenant isolation, money, data integrity, migrations,
+destructive behavior, concurrency, public APIs, production-critical paths, or
+a wide architectural refactor. It defines one coherent phase or delivery unit
+and adds a fresh independent Sol review after parent verification:
 
 ```text
 $solweaver
@@ -240,10 +251,9 @@ early, the accumulated relevant change must pass its final gate first. An
 assurance unit that is too broad for one complete review must be redefined
 before call 1 rather than partially omitted from the reviewer packet.
 
-Final-strict is Solweaver's only assurance contract and applies to every task,
-including auth, authorization, secrets, tenant isolation, money, data
-integrity, migrations, destructive behavior, concurrency, public APIs,
-production-critical paths, and wide architectural refactors.
+Final-strict is Solweaver's independent-review assurance contract. Ordinary
+low-risk work uses standard assurance and stops after Sol inspects the complete
+diff and reruns proportionate checks.
 
 Final-strict may defer the independent review during reversible implementation,
 but it still requires a fresh reviewer and `ship` verdict before its final or
@@ -379,9 +389,10 @@ Sol should finish with:
 
 - the usable outcome and changed-file scope;
 - verification commands actually run and their concrete results;
-- team execution, final-strict base and boundary, stable assurance-unit
-  identity, readiness result, review call count, and reviewer verdict;
-- the post-phase retrospective status after a terminal final-strict result;
+- the execution and assurance modes selected;
+- when final-strict applies, its base and boundary, stable assurance-unit
+  identity, readiness result, review call count, reviewer verdict, and
+  post-phase retrospective status;
 - remaining gaps, risks, or behavior that was not proved; and
 - external actions such as commit, push, pull request, merge, or deployment
   still waiting for explicit authorization.
@@ -390,13 +401,16 @@ Sol should finish with:
 
 ```mermaid
 flowchart LR
-    G["Software goal"] --> P["Sol<br/>Any effort<br/>Plan and define assurance unit"]
-    P --> S{"Worker routing"}
+    G["Software goal"] --> P["Sol<br/>Any effort<br/>Classify mode and risk"]
+    P --> S{"Does delegation help?"}
+    S -->|"No"| I["Sol<br/>Any effort<br/>Implement or integrate and verify"]
     S -->|"Coupled or judgment-heavy"| T["Terra max<br/>Default worker"]
     S -->|"Narrow or high-throughput"| L["Luna max<br/>Bounded worker"]
-    T --> I["Sol<br/>Any effort<br/>Integrate and verify"]
+    T --> I
     L --> I
-    I --> Q{"Final-strict readiness green?"}
+    I --> A{"Final-strict required?"}
+    A -->|"No"| R["Evidence-backed result"]
+    A -->|"Yes"| Q{"Final-strict readiness green?"}
     Q -->|"No"| I
     Q -->|"Yes"| V["Fresh Sol max<br/>Read-only review"]
     V -->|"ship"| H["Post-phase retrospective"]
@@ -404,13 +418,13 @@ flowchart LR
     C -->|"Budget remains"| X["Close outcome and verify again"]
     C -->|"Final budget call"| E["Review exhausted<br/>Parent recovery"]
     E --> H
-    H --> R["Evidence-backed result"]
+    H --> R
     X --> I
 ```
 
 | Role | Runtime | Best fit |
 | --- | --- | --- |
-| Orchestrator and integrator | `gpt-5.6-sol` / any supported effort | Planning, decomposition, critical-path work, ownership, integration, verification, and delivery |
+| Orchestrator and local implementer | `gpt-5.6-sol` / any supported effort | Planning, local implementation, decomposition, ownership, integration, verification, and delivery |
 | Default worker | `gpt-5.6-terra` / `max` | Coupled, ambiguous, multi-file, architecture-sensitive, backend, frontend, database, integration, debugging, and refactoring work |
 | Bounded worker | `gpt-5.6-luna` / `max` | Narrow, mechanical, repetitive, documentation-adjacent, high-throughput, or independent file clusters |
 | Final-strict reviewer | `gpt-5.6-sol` / `max`, read-only | One fresh-context review at a declared final or protected boundary; returns `ship`, `fix-first`, or `rethink` |
@@ -452,7 +466,8 @@ hard-coded to a model because Solweaver does not own their definitions.
 
 | Assurance | Use it for | Acceptance |
 | --- | --- | --- |
-| Final-strict | Every stable task, phase, or delivery unit where intermediate work remains reversible | Durable ledger, parent verification and adversarial readiness, then one target call with a default maximum of two or explicitly predeclared extended maximum of three; only a valid `ship` passes |
+| Standard | Ordinary low-risk work in `auto`, `solo`, or `team` | Sol inspects the complete diff and reruns proportionate checks; no ledger or reviewer |
+| Final-strict | Explicitly requested independent review or high-risk/protected boundaries in `auto`, `solo-reviewed`, or `team` | Durable ledger, parent verification and adversarial readiness, then one target call with a default maximum of two or explicitly predeclared extended maximum of three; only a valid `ship` passes |
 
 Final-strict review is intentionally fresh-context and read-only. The reviewer
 never implements its findings. Any call without a valid accepted `ship` returns
@@ -493,9 +508,13 @@ workflows, or lowering the review bar.
 - A configured model is not described as observed runtime unless runtime or
   session metadata exposes it. Package-owned child results are accepted only
   after their model and effort pass the runtime identity gate.
-- Final-strict defers only the independent reviewer. Parent verification still
-  runs at every checkpoint, intermediate work cannot claim `ship`, and protected
-  irreversible or production boundaries require the final gate first.
+- Standard assurance avoids reviewer, ledger, manifest, and coordination
+  overhead for ordinary work while still requiring complete-diff inspection
+  and proportionate parent verification.
+- When final-strict applies, it defers only the independent reviewer. Parent
+  verification still runs at every checkpoint, intermediate work cannot claim
+  `ship`, and protected irreversible or production boundaries require the
+  final gate first.
 - The final-strict review target is one call. The default hard budget is two;
   an explicitly predeclared extended budget is capped at three and cannot be
   enabled after review begins. The durable counter crosses tasks, worktrees,
@@ -507,9 +526,9 @@ workflows, or lowering the review bar.
   Sol may fix and refreeze without replenishing calls, then terminates with
   transparent work and independent-attestation status. Protected external
   actions remain unexecuted without their required authority.
-- Every path, including high-risk auth, money, tenant-isolation, data-integrity,
-  concurrency, and production work, stays under parent control and requires the
-  final-strict gate.
+- High-risk auth, money, tenant-isolation, data-integrity, concurrency, and
+  production work stays under parent control and requires the final-strict
+  gate; ordinary low-risk work does not.
 - The skill does not authorize deployment, production mutation, pushing,
   merging, or pull-request creation.
 

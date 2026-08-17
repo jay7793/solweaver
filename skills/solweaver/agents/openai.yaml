@@ -1,4 +1,4 @@
 interface:
   display_name: "Solweaver"
-  short_description: "Sol leads a team with final-strict review"
-  default_prompt: "Use $solweaver to run this software-development goal with mandatory team execution and final-strict assurance."
+  short_description: "Sol works solo or leads bounded agents"
+  default_prompt: "Use $solweaver in auto mode with standard assurance unless risk or an explicit request requires final-strict; select solo, solo-reviewed, or team execution only when requested or materially useful."
